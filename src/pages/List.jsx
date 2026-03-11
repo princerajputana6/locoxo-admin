@@ -47,43 +47,42 @@ const List = ({ token }) => {
   }, [])
 
   return (
-    <div className='bg-white rounded-xl shadow-sm p-6'>
-      <div className='flex items-center justify-between mb-6'>
+    <div className='p-6'>
+      <div className='flex items-center justify-between mb-8'>
         <div>
-          <h2 className='text-2xl font-bold text-gray-800'>Products</h2>
-          <p className='text-sm text-gray-500 mt-1'>Manage your product inventory</p>
+          <h1 className='text-3xl font-bold'>Products</h1>
+          <p className='text-sm text-gray-600 mt-1'>Manage your product inventory</p>
         </div>
-        <div className='bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold'>
+        <div className='bg-black text-white px-6 py-3 font-semibold rounded-lg shadow-md'>
           {list.length} Products
         </div>
       </div>
 
-      <div className='flex flex-col gap-3'>
+      <div className='bg-white border border-gray-200 rounded-lg shadow-sm p-6'>
 
-        {/* ------- List Table Title ---------- */}
+        <div className='flex flex-col gap-3'>
+          {/* ------- List Table Title ---------- */}
+          <div className='hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center py-3 px-4 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg'>
+            <span>Image</span>
+            <span>Product Name</span>
+            <span>Category</span>
+            <span>Price</span>
+            <span className='text-center'>Action</span>
+          </div>
 
-        <div className='hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg text-sm font-semibold text-gray-700'>
-          <span>Image</span>
-          <span>Product Name</span>
-          <span>Category</span>
-          <span>Price</span>
-          <span className='text-center'>Action</span>
+          {/* ------ Product List ------ */}
+          {
+            list.map((item, index) => (
+              <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center gap-4 py-4 px-4 border border-gray-200 rounded-lg hover:shadow-md text-sm transition-all bg-white' key={index}>
+                <img className='w-14 h-14 object-cover rounded-lg' src={item.image[0]} alt="" />
+                <p className='font-semibold'>{item.name}</p>
+                <span className='px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full w-fit'>{item.category?.name || item.category}</span>
+                <p className='font-bold'>{currency}{item.price}</p>
+                <button onClick={() => removeProduct(item._id)} className='text-right md:text-center cursor-pointer bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors text-xs'>DELETE</button>
+              </div>
+            ))
+          }
         </div>
-
-        {/* ------ Product List ------ */}
-
-        {
-          list.map((item, index) => (
-            <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center gap-4 py-3 px-4 border border-gray-200 hover:border-purple-300 rounded-lg text-sm transition-all hover:shadow-md bg-white' key={index}>
-              <img className='w-14 h-14 object-cover rounded-lg shadow-sm' src={item.image[0]} alt="" />
-              <p className='font-medium text-gray-800'>{item.name}</p>
-              <span className='px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium w-fit'>{item.category?.name || item.category}</span>
-              <p className='font-semibold text-gray-900'>{currency}{item.price}</p>
-              <button onClick={()=>removeProduct(item._id)} className='text-right md:text-center cursor-pointer text-red-500 hover:text-red-700 font-bold text-lg transition-colors'>×</button>
-            </div>
-          ))
-        }
-
       </div>
     </div>
   )
