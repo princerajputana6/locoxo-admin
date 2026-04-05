@@ -14,12 +14,13 @@ import Banners from './pages/Banners'
 import Returns from './pages/Returns'
 import SalesReport from './pages/SalesReport'
 import Analytics from './pages/Analytics'
+import Influencers from './pages/Influencers'
 import Login from './components/Login'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export const backendUrl = import.meta.env.VITE_BACKEND_URL
-export const currency = '$'
+export const currency = '₹'
 
 const App = () => {
 
@@ -51,6 +52,7 @@ const App = () => {
                 <Route path='/coupons' element={<Coupons token={token} />} />
                 <Route path='/banners' element={<Banners token={token} />} />
                 <Route path='/returns' element={<Returns token={token} />} />
+                <Route path='/influencers' element={<Influencers token={token} />} />
                 <Route path='/reports/sales' element={<SalesReport token={token} />} />
                 <Route path='/reports/analytics' element={<Analytics token={token} />} />
               </Routes>
