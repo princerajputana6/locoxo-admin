@@ -116,18 +116,27 @@ const Inventory = ({ token }) => {
                         <span className={`font-semibold ${statusColor}`}>{stockStatus}</span>
                       </td>
                       <td className='py-4 px-4 text-center'>
-                        <input
-                          type='number'
-                          defaultValue={stock}
-                          onBlur={(e) => {
-                            const newStock = parseInt(e.target.value) || 0
-                            if (newStock !== stock) {
-                              updateStock(product._id, newStock)
-                            }
-                          }}
-                          className='w-20 px-3 py-2 border border-gray-300 rounded-lg text-center focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none'
-                          min='0'
-                        />
+                        <div className='flex items-center justify-center gap-2'>
+                          <input
+                            type='number'
+                            id={`stock-${product._id}`}
+                            defaultValue={stock}
+                            className='w-20 px-3 py-2 border border-gray-300 rounded-lg text-center focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none'
+                            min='0'
+                          />
+                          <button
+                            onClick={() => {
+                              const input = document.getElementById(`stock-${product._id}`)
+                              const newStock = parseInt(input.value) || 0
+                              if (newStock !== stock) {
+                                updateStock(product._id, newStock)
+                              }
+                            }}
+                            className='px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium'
+                          >
+                            Update
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
