@@ -2,8 +2,9 @@ import axios from 'axios'
 import React, { useState } from 'react'
 import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
+import { assets } from '../assets/assets'
 
-const Login = ({setToken}) => {
+const Login = ({setToken, setUserRole, setUserData}) => {
 
     const [email,setEmail] = useState('')
     const [password,setPassword] = useState('')
@@ -11,16 +12,39 @@ const Login = ({setToken}) => {
     const onSubmitHandler = async (e) => {
         try {
             e.preventDefault();
-            const response = await axios.post(backendUrl + '/api/user/admin',{email,password})
-            if (response.data.success) {
-                setToken(response.data.token)
+            
+            // First try admin login
+            try {
+                const adminResponse = await axios.post(backendUrl + '/api/user/admin', {email, password})
+                if (adminResponse.data.success) {
+                    setToken(adminResponse.data.token)
+                    setUserRole('admin')
+                    setUserData({ email, role: 'admin' })
+                    localStorage.setItem('userRole', 'admin')
+                    localStorage.setItem('userData', JSON.stringify({ email, role: 'admin' }))
+                    toast.success('Welcome Admin!')
+                    return
+                }
+            } catch (adminError) {
+                // Admin login failed, try influencer login
+            }
+
+            // Try influencer login
+            const influencerResponse = await axios.post(backendUrl + '/api/influencer/login', {email, password})
+            if (influencerResponse.data.success) {
+                setToken(influencerResponse.data.token)
+                setUserRole('influencer')
+                setUserData(influencerResponse.data.influencer)
+                localStorage.setItem('userRole', 'influencer')
+                localStorage.setItem('userData', JSON.stringify(influencerResponse.data.influencer))
+                toast.success(`Welcome ${influencerResponse.data.influencer.name}!`)
             } else {
-                toast.error(response.data.message)
+                toast.error(influencerResponse.data.message || 'Invalid credentials')
             }
              
         } catch (error) {
             console.log(error);
-            toast.error(error.message)
+            toast.error('Invalid credentials. Please try again.')
         }
     }
 
@@ -28,9 +52,7 @@ const Login = ({setToken}) => {
     <div className='min-h-screen flex items-center justify-center w-full bg-gray-50'>
         <div className='bg-white border border-gray-200 rounded-xl shadow-lg p-10 max-w-md w-full'>
             <div className='flex flex-col items-center mb-8'>
-                <div className='w-16 h-16 bg-black rounded-lg flex items-center justify-center mb-4 shadow-md'>
-                    <span className='text-white font-bold text-3xl'>L</span>
-                </div>
+                <img src={assets.logo} alt='Locoxo Logo' className='w-32 h-auto mb-4' />
                 <h1 className='text-3xl font-bold text-black mb-1 tracking-tight'>LOCOXO</h1>
                 <p className='text-gray-600 text-sm uppercase tracking-wider'>Admin Panel</p>
             </div>

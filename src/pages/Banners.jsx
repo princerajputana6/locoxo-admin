@@ -10,6 +10,19 @@ const Banners = ({ token }) => {
   const [image, setImage] = useState(null)
   const [link, setLink] = useState('')
   const [isActive, setIsActive] = useState(true)
+  const [placement, setPlacement] = useState('after-hero')
+
+  const placementOptions = [
+    { value: 'after-hero', label: 'After Hero Section' },
+    { value: 'after-instagram', label: 'After Instagram Section' },
+    { value: 'after-match-mood', label: 'After Match the Mood' },
+    { value: 'after-price-combo', label: 'After Price Combo' },
+    { value: 'after-best-seller', label: 'After Best Seller' },
+    { value: 'after-new-arrivals', label: 'After New Arrivals' },
+    { value: 'after-video-intro', label: 'After Video Intro' },
+    { value: 'after-favorites', label: 'After Your Favorites' },
+    { value: 'after-stats', label: 'After Stats Section' }
+  ]
 
   const fetchBanners = async () => {
     try {
@@ -31,6 +44,7 @@ const Banners = ({ token }) => {
       formData.append('subtitle', subtitle)
       formData.append('link', link)
       formData.append('isActive', isActive)
+      formData.append('placement', placement)
       if (image) formData.append('image', image)
 
       const response = await axios.post(backendUrl + '/api/banner/add', formData, { headers: { token } })
@@ -83,6 +97,7 @@ const Banners = ({ token }) => {
     setImage(null)
     setLink('')
     setIsActive(true)
+    setPlacement('after-hero')
   }
 
   useEffect(() => {
@@ -142,6 +157,20 @@ const Banners = ({ token }) => {
                 placeholder='/collection?category=Men'
               />
             </div>
+            <div>
+              <label className='block text-sm font-semibold mb-2'>Placement on Home Page</label>
+              <select
+                value={placement}
+                onChange={(e) => setPlacement(e.target.value)}
+                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+              >
+                {placementOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className='flex items-center gap-2'>
               <input
                 type='checkbox'
@@ -176,6 +205,11 @@ const Banners = ({ token }) => {
                           <h3 className='font-bold text-lg'>{banner.title}</h3>
                           {banner.subtitle && <p className='text-sm text-gray-600'>{banner.subtitle}</p>}
                           {banner.link && <p className='text-xs text-gray-500 mt-1'>Link: {banner.link}</p>}
+                          {banner.placement && (
+                            <p className='text-xs text-blue-600 mt-1 font-medium'>
+                              📍 {placementOptions.find(p => p.value === banner.placement)?.label || banner.placement}
+                            </p>
+                          )}
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${banner.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
                           {banner.isActive ? 'Active' : 'Inactive'}

@@ -15,6 +15,7 @@ const Influencers = ({ token }) => {
   const [image, setImage] = useState(false)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [phone, setPhone] = useState("")
   const [instagramHandle, setInstagramHandle] = useState("")
   const [productId, setProductId] = useState("")
@@ -87,11 +88,12 @@ const Influencers = ({ token }) => {
       const formData = new FormData()
       formData.append('name', name)
       formData.append('email', email)
+      formData.append('password', password)
       formData.append('phone', phone)
       formData.append('instagramHandle', instagramHandle)
       formData.append('productId', productId)
       formData.append('commissionRate', commissionRate)
-      formData.append('image', image)
+      if (image) formData.append('image', image)
 
       const response = await axios.post(backendUrl + '/api/influencer/add', formData, { headers: { token } })
 
@@ -156,6 +158,7 @@ const Influencers = ({ token }) => {
     setImage(false)
     setName('')
     setEmail('')
+    setPassword('')
     setPhone('')
     setInstagramHandle('')
     setProductId('')
@@ -217,6 +220,19 @@ const Influencers = ({ token }) => {
                 required
                 className='w-full border border-gray-300 px-3 py-2 rounded'
               />
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium mb-2'>Password *</label>
+              <input
+                onChange={(e) => setPassword(e.target.value)}
+                value={password}
+                type='password'
+                placeholder='Enter password for influencer login'
+                required
+                className='w-full border border-gray-300 px-3 py-2 rounded'
+              />
+              <p className='text-xs text-gray-500 mt-1'>Influencer will use this to login</p>
             </div>
 
             <div>
