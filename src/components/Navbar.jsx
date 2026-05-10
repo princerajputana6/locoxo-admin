@@ -5,13 +5,10 @@ const Navbar = ({setToken, userRole, userData}) => {
   return (
     <div className='flex items-center py-4 px-[4%] justify-between bg-black shadow-md'>
         <div className='flex items-center gap-3'>
-          <img src={assets.logo} alt='Locoxo Logo' className='h-10 w-auto' />
-          <div>
-            <h1 className='text-2xl font-bold text-white tracking-tight'>LOCOXO</h1>
-            <p className='text-xs text-gray-400 uppercase tracking-wider'>
-              {userRole === 'influencer' ? 'Influencer Portal' : 'Admin Panel'}
-            </p>
-          </div>
+          <img src={assets.logo_white} alt='Locoxo Logo' className='h-7 w-auto' />
+          <p className='text-xs text-gray-400 uppercase tracking-wider'>
+            {userRole === 'influencer' ? 'Influencer Portal' : 'Admin Panel'}
+          </p>
         </div>
         <div className='flex items-center gap-4'>
           {userRole === 'influencer' && userData && (

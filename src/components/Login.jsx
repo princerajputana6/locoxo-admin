@@ -52,9 +52,9 @@ const Login = ({setToken, setUserRole, setUserData}) => {
     <div className='min-h-screen flex items-center justify-center w-full bg-gray-50'>
         <div className='bg-white border border-gray-200 rounded-xl shadow-lg p-10 max-w-md w-full'>
             <div className='flex flex-col items-center mb-8'>
-                <img src={assets.logo} alt='Locoxo Logo' className='w-32 h-auto mb-4' />
-                <h1 className='text-3xl font-bold text-black mb-1 tracking-tight'>LOCOXO</h1>
-                <p className='text-gray-600 text-sm uppercase tracking-wider'>Admin Panel</p>
+                <div className='bg-black rounded-xl px-6 py-3 mb-4'>
+                    <img src={assets.logo_white} alt='Locoxo Logo' className='h-7 w-auto' />
+                </div>
             </div>
             <form onSubmit={onSubmitHandler}>
                 <div className='mb-4 min-w-72'>
