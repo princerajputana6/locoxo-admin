@@ -1,10 +1,11 @@
 import React from 'react'
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useState } from 'react'
 import axios from 'axios'
 import { backendUrl, currency } from '../App'
 import { toast } from 'react-toastify'
 import { assets } from '../assets/assets'
+import { useAdminOrderStream } from '../hooks/useOrderRealtime'
 
 const Orders = ({ token }) => {
 
@@ -36,6 +37,34 @@ const Orders = ({ token }) => {
 
 
   }
+
+  const createShipment = async (orderId) => {
+    try {
+      const { data } = await axios.post(backendUrl + '/api/shipment/admin/create', { orderId }, { headers: { token } })
+      if (data.success) {
+        toast.success('Shipment created · AWB ' + data.shipment.awb)
+        await fetchAllOrders()
+      } else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed to create shipment') }
+  }
+
+  const pushEvent = async (shipmentId, status) => {
+    try {
+      const { data } = await axios.post(backendUrl + '/api/shipment/admin/' + shipmentId + '/event', {
+        status, description: `Marked ${status.replace(/_/g, ' ')} by admin`
+      }, { headers: { token } })
+      if (data.success) {
+        toast.success('Status pushed')
+        await fetchAllOrders()
+      }
+    } catch { toast.error('Failed') }
+  }
+
+  // Live updates from server
+  const handleStream = useCallback(() => {
+    fetchAllOrders()
+  }, [])
+  useAdminOrderStream(handleStream)
 
   const statusHandler = async ( event, orderId ) => {
     try {
@@ -267,14 +296,42 @@ const Orders = ({ token }) => {
                   <option value="Delivered">Delivered</option>
                 </select>
                 {order.orderNumber && (
-                  <button 
+                  <button
                     onClick={() => downloadInvoice(order._id, order.orderNumber)}
-                    className='w-full px-4 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2'
+                    className='w-full px-4 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-2'
                   >
                     <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                       <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
                     </svg>
                     Download Invoice
+                  </button>
+                )}
+                {order.trackingNumber ? (
+                  <div className='mt-2 p-2 border border-gray-200 text-xs'>
+                    <p className='text-[10px] uppercase tracking-widest text-gray-500 mb-1'>Shipment</p>
+                    <p className='font-mono break-all mb-2'>{order.trackingNumber}</p>
+                    <div className='flex flex-wrap gap-1'>
+                      {['picked_up', 'in_transit', 'out_for_delivery', 'delivered'].map((s) => (
+                        <button
+                          key={s}
+                          type='button'
+                          onClick={async () => {
+                            const { data } = await axios.get(backendUrl + '/api/shipment/admin/order/' + order._id, { headers: { token } })
+                            if (data.success && data.shipment) pushEvent(data.shipment._id, s)
+                          }}
+                          className='text-[9px] uppercase tracking-widest px-1.5 py-1 border border-gray-300 hover:border-black'
+                        >
+                          {s.replace(/_/g, ' ')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => createShipment(order._id)}
+                    className='w-full px-4 py-2 border border-black text-sm font-semibold hover:bg-black hover:text-white'
+                  >
+                    Create Shipment
                   </button>
                 )}
               </div>

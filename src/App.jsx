@@ -16,6 +16,7 @@ import SalesReport from './pages/SalesReport'
 import Analytics from './pages/Analytics'
 import Influencers from './pages/Influencers'
 import InfluencerDashboard from './pages/InfluencerDashboard'
+import Tickets from './pages/Tickets'
 import Login from './components/Login'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -80,6 +81,7 @@ const App = () => {
                   <Route path='/banners' element={<Banners token={token} />} />
                   <Route path='/returns' element={<Returns token={token} />} />
                   <Route path='/influencers' element={<Influencers token={token} />} />
+                  <Route path='/tickets' element={<Tickets token={token} />} />
                   <Route path='/reports/sales' element={<SalesReport token={token} />} />
                   <Route path='/reports/analytics' element={<Analytics token={token} />} />
                   <Route path='*' element={<Navigate to='/' />} />
