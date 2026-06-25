@@ -95,7 +95,7 @@ const Categories = ({ token }) => {
     return categories.map((category) => (
       <div key={category._id} className='mb-2'>
         <div 
-          className={`flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition-all ${
+          className={`flex items-center justify-between p-4 border border-white/10 rounded-lg hover:shadow-md transition-all ${
             level > 0 ? 'ml-' + (level * 6) : ''
           }`}
           style={{ marginLeft: `${level * 24}px` }}
@@ -104,7 +104,7 @@ const Categories = ({ token }) => {
             {category.children && category.children.length > 0 && (
               <button
                 onClick={() => toggleCategory(category._id)}
-                className='text-gray-500 hover:text-gray-700'
+                className='text-muted hover:text-fg'
               >
                 {expandedCategories[category._id] ? (
                   <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
@@ -121,19 +121,19 @@ const Categories = ({ token }) => {
               <div className='flex items-center gap-2'>
                 <h3 className='font-semibold text-lg'>{category.name}</h3>
                 {level > 0 && (
-                  <span className='text-xs bg-gray-200 px-2 py-1 rounded'>
+                  <span className='text-xs bg-white/10 px-2 py-1 rounded'>
                     Level {level}
                   </span>
                 )}
               </div>
-              <p className='text-sm text-gray-600'>Slug: {category.slug}</p>
-              {category.description && <p className='text-sm text-gray-500 mt-1'>{category.description}</p>}
+              <p className='text-sm text-muted'>Slug: {category.slug}</p>
+              {category.description && <p className='text-sm text-muted mt-1'>{category.description}</p>}
             </div>
           </div>
           <div className='flex gap-2'>
             <button
               onClick={() => editCategory(category)}
-              className='px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-sm'
+              className='px-4 py-2 bg-white/5 text-fg rounded-lg font-semibold hover:bg-white/10 transition-colors text-sm'
             >
               Edit
             </button>
@@ -190,7 +190,7 @@ const Categories = ({ token }) => {
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
         {/* Add/Edit Form */}
-        <div className='bg-white border border-gray-200 rounded-lg shadow-sm p-6'>
+        <div className='glass border border-white/10 rounded-lg shadow-sm p-6'>
           <h2 className='text-xl font-bold mb-6'>{isEditing ? 'Edit Category' : 'Add New Category'}</h2>
           <form onSubmit={onSubmitHandler} className='space-y-4'>
             <div>
@@ -199,7 +199,7 @@ const Categories = ({ token }) => {
                 type='text'
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
                 placeholder='e.g., Men, Women, Kids'
                 required
               />
@@ -210,7 +210,7 @@ const Categories = ({ token }) => {
                 type='text'
                 value={slug}
                 onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
                 placeholder='e.g., men, women, kids'
                 required
               />
@@ -220,7 +220,7 @@ const Categories = ({ token }) => {
               <select
                 value={parentCategory}
                 onChange={(e) => setParentCategory(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
               >
                 <option value=''>None (Top Level)</option>
                 {categories.filter(cat => cat._id !== editId).map((cat) => (
@@ -229,21 +229,21 @@ const Categories = ({ token }) => {
                   </option>
                 ))}
               </select>
-              <p className='text-xs text-gray-500 mt-1'>Select a parent to create a subcategory</p>
+              <p className='text-xs text-muted mt-1'>Select a parent to create a subcategory</p>
             </div>
             <div>
               <label className='block text-sm font-semibold mb-2'>Description (Optional)</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all h-24'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all h-24'
                 placeholder='Category description...'
               />
             </div>
             <div className='flex gap-3'>
               <button
                 type='submit'
-                className='flex-1 bg-black text-white py-3 font-semibold rounded-lg hover:bg-gray-800 transition-colors'
+                className='flex-1 bg-accent-gradient text-brand-deep py-3 font-semibold rounded-lg hover:brightness-110 transition-colors'
               >
                 {isEditing ? 'Update' : 'Add'} Category
               </button>
@@ -251,7 +251,7 @@ const Categories = ({ token }) => {
                 <button
                   type='button'
                   onClick={resetForm}
-                  className='px-6 bg-gray-200 text-gray-700 py-3 font-semibold rounded-lg hover:bg-gray-300 transition-colors'
+                  className='px-6 bg-white/10 text-fg py-3 font-semibold rounded-lg hover:bg-gray-300 transition-colors'
                 >
                   Cancel
                 </button>
@@ -261,7 +261,7 @@ const Categories = ({ token }) => {
         </div>
 
         {/* Categories List */}
-        <div className='lg:col-span-2 bg-white border border-gray-200 rounded-lg shadow-sm p-6'>
+        <div className='lg:col-span-2 glass border border-white/10 rounded-lg shadow-sm p-6'>
           <div className='flex items-center justify-between mb-6'>
             <h2 className='text-xl font-bold'>All Categories ({categories.length})</h2>
             <button
@@ -269,7 +269,7 @@ const Categories = ({ token }) => {
                 const allIds = categories.reduce((acc, cat) => ({ ...acc, [cat._id]: true }), {})
                 setExpandedCategories(allIds)
               }}
-              className='text-sm text-gray-600 hover:text-black font-semibold'
+              className='text-sm text-muted hover:text-fg font-semibold'
             >
               Expand All
             </button>
@@ -278,7 +278,7 @@ const Categories = ({ token }) => {
             {categoryTree.length > 0 ? (
               renderCategoryTree(categoryTree)
             ) : (
-              <p className='text-center text-gray-500 py-8'>No categories yet. Add your first category!</p>
+              <p className='text-center text-muted py-8'>No categories yet. Add your first category!</p>
             )}
           </div>
         </div>

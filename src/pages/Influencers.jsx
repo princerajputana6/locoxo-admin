@@ -176,7 +176,7 @@ const Influencers = ({ token }) => {
         <h1 className='text-3xl font-bold'>Influencer Management</h1>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className='bg-black text-white px-6 py-2 rounded hover:bg-gray-800 transition-colors'
+          className='bg-accent-gradient text-brand-deep px-6 py-2 rounded hover:brightness-110 transition-colors'
         >
           {showAddForm ? 'Cancel' : '+ Add Influencer'}
         </button>
@@ -184,7 +184,7 @@ const Influencers = ({ token }) => {
 
       {/* Add Influencer Form */}
       {showAddForm && (
-        <div className='bg-white p-6 rounded-lg shadow-md mb-6'>
+        <div className='glass p-6 rounded-lg shadow-md mb-6'>
           <h2 className='text-xl font-bold mb-4'>Add New Influencer</h2>
           <form onSubmit={handleAddInfluencer} className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
@@ -194,7 +194,7 @@ const Influencers = ({ token }) => {
                 type='file'
                 accept='image/*'
                 required
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
@@ -206,7 +206,7 @@ const Influencers = ({ token }) => {
                 type='text'
                 placeholder='John Doe'
                 required
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
@@ -218,7 +218,7 @@ const Influencers = ({ token }) => {
                 type='email'
                 placeholder='influencer@example.com'
                 required
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
@@ -230,9 +230,9 @@ const Influencers = ({ token }) => {
                 type='password'
                 placeholder='Enter password for influencer login'
                 required
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
-              <p className='text-xs text-gray-500 mt-1'>Influencer will use this to login</p>
+              <p className='text-xs text-muted mt-1'>Influencer will use this to login</p>
             </div>
 
             <div>
@@ -242,7 +242,7 @@ const Influencers = ({ token }) => {
                 value={phone}
                 type='tel'
                 placeholder='+91 9876543210'
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
@@ -253,7 +253,7 @@ const Influencers = ({ token }) => {
                 value={instagramHandle}
                 type='text'
                 placeholder='@username'
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
@@ -263,7 +263,7 @@ const Influencers = ({ token }) => {
                 onChange={(e) => setProductId(e.target.value)}
                 value={productId}
                 required
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               >
                 <option value=''>Select Product</option>
                 {products.map((product) => (
@@ -283,14 +283,14 @@ const Influencers = ({ token }) => {
                 min='0'
                 max='100'
                 placeholder='10'
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
             <div className='md:col-span-2'>
               <button
                 type='submit'
-                className='bg-black text-white px-8 py-2 rounded hover:bg-gray-800 transition-colors'
+                className='bg-accent-gradient text-brand-deep px-8 py-2 rounded hover:brightness-110 transition-colors'
               >
                 Add Influencer
               </button>
@@ -301,7 +301,7 @@ const Influencers = ({ token }) => {
 
       {/* Edit Influencer Form */}
       {showEditForm && (
-        <div className='bg-white p-6 rounded-lg shadow-md mb-6'>
+        <div className='glass p-6 rounded-lg shadow-md mb-6'>
           <h2 className='text-xl font-bold mb-4'>Edit Influencer</h2>
           <form onSubmit={handleEditInfluencer} className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
@@ -311,7 +311,7 @@ const Influencers = ({ token }) => {
                 value={name}
                 type='text'
                 required
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
@@ -322,7 +322,7 @@ const Influencers = ({ token }) => {
                 value={email}
                 type='email'
                 required
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
@@ -332,7 +332,7 @@ const Influencers = ({ token }) => {
                 onChange={(e) => setPhone(e.target.value)}
                 value={phone}
                 type='tel'
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
@@ -342,7 +342,7 @@ const Influencers = ({ token }) => {
                 onChange={(e) => setInstagramHandle(e.target.value)}
                 value={instagramHandle}
                 type='text'
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
@@ -352,7 +352,7 @@ const Influencers = ({ token }) => {
                 onChange={(e) => setProductId(e.target.value)}
                 value={productId}
                 required
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               >
                 <option value=''>Select Product</option>
                 {products.map((product) => (
@@ -371,14 +371,14 @@ const Influencers = ({ token }) => {
                 type='number'
                 min='0'
                 max='100'
-                className='w-full border border-gray-300 px-3 py-2 rounded'
+                className='w-full border border-white/10 px-3 py-2 rounded'
               />
             </div>
 
             <div className='md:col-span-2 flex gap-3'>
               <button
                 type='submit'
-                className='bg-black text-white px-8 py-2 rounded hover:bg-gray-800 transition-colors'
+                className='bg-accent-gradient text-brand-deep px-8 py-2 rounded hover:brightness-110 transition-colors'
               >
                 Update Influencer
               </button>
@@ -389,7 +389,7 @@ const Influencers = ({ token }) => {
                   setEditingInfluencer(null)
                   resetForm()
                 }}
-                className='bg-gray-300 text-black px-8 py-2 rounded hover:bg-gray-400 transition-colors'
+                className='bg-gray-300 text-fg px-8 py-2 rounded hover:bg-gray-400 transition-colors'
               >
                 Cancel
               </button>
@@ -399,24 +399,24 @@ const Influencers = ({ token }) => {
       )}
 
       {/* Influencers List */}
-      <div className='bg-white rounded-lg shadow-md overflow-hidden'>
+      <div className='glass rounded-lg shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <table className='w-full'>
-            <thead className='bg-gray-50 border-b'>
+            <thead className='bg-white/5 border-b'>
               <tr>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Image</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Name</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Instagram</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Product</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Stats</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Commission</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Status</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Actions</th>
+                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Image</th>
+                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Name</th>
+                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Instagram</th>
+                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Product</th>
+                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Stats</th>
+                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Commission</th>
+                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Status</th>
+                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Actions</th>
               </tr>
             </thead>
-            <tbody className='divide-y divide-gray-200'>
+            <tbody className='divide-y divide-white/10'>
               {influencers.map((influencer) => (
-                <tr key={influencer._id} className='hover:bg-gray-50'>
+                <tr key={influencer._id} className='hover:bg-white/5'>
                   <td className='px-6 py-4'>
                     <img
                       src={influencer.image}
@@ -427,14 +427,14 @@ const Influencers = ({ token }) => {
                   <td className='px-6 py-4'>
                     <div>
                       <p className='font-medium'>{influencer.name}</p>
-                      <p className='text-sm text-gray-500'>{influencer.email}</p>
+                      <p className='text-sm text-muted'>{influencer.email}</p>
                     </div>
                   </td>
                   <td className='px-6 py-4 text-sm'>{influencer.instagramHandle || '-'}</td>
                   <td className='px-6 py-4'>
                     <div>
                       <p className='font-medium text-sm'>{influencer.productId?.name}</p>
-                      <p className='text-xs text-gray-500'>{currency}{influencer.productId?.price}</p>
+                      <p className='text-xs text-muted'>{currency}{influencer.productId?.price}</p>
                     </div>
                   </td>
                   <td className='px-6 py-4'>
@@ -497,8 +497,8 @@ const Influencers = ({ token }) => {
         {influencers.length === 0 && (
           <div className='text-center py-12'>
             <TrendingUp size={48} className='mx-auto text-gray-300 mb-4' />
-            <p className='text-gray-500 text-lg'>No influencers added yet</p>
-            <p className='text-gray-400 text-sm mt-2'>Click "Add Influencer" to get started</p>
+            <p className='text-muted text-lg'>No influencers added yet</p>
+            <p className='text-faint text-sm mt-2'>Click "Add Influencer" to get started</p>
           </div>
         )}
       </div>

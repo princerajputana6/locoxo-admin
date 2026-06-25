@@ -7,7 +7,7 @@ const STATUS_COLORS = {
   open:     'bg-blue-100 text-blue-700',
   pending:  'bg-amber-100 text-amber-700',
   resolved: 'bg-green-100 text-green-700',
-  closed:   'bg-gray-200 text-gray-600',
+  closed:   'bg-white/10 text-muted',
 }
 
 const Tickets = ({ token }) => {
@@ -77,14 +77,14 @@ const Tickets = ({ token }) => {
       <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
         <div>
           <h1 className='text-2xl font-bold'>Support Tickets</h1>
-          <p className='text-sm text-gray-500'>Respond to customer queries</p>
+          <p className='text-sm text-muted'>Respond to customer queries</p>
         </div>
         <div className='flex gap-2'>
           {['', 'open', 'pending', 'resolved', 'closed'].map((s) => (
             <button
               key={s || 'all'}
               onClick={() => setFilter(s)}
-              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wide border ${filter === s ? 'bg-black text-white border-black' : 'bg-white border-gray-300 hover:border-gray-500'}`}
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wide border ${filter === s ? 'bg-accent-gradient text-brand-deep border-accent' : 'glass border-white/10 hover:border-gray-500'}`}
             >
               {s || 'All'}
             </button>
@@ -94,25 +94,25 @@ const Tickets = ({ token }) => {
 
       <div className='grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6'>
         {/* List */}
-        <div className='bg-white border border-gray-200 max-h-[78vh] overflow-y-auto'>
+        <div className='glass border border-white/10 max-h-[78vh] overflow-y-auto'>
           {loading ? (
-            <div className='p-6 text-sm text-gray-500'>Loading…</div>
+            <div className='p-6 text-sm text-muted'>Loading…</div>
           ) : tickets.length === 0 ? (
-            <div className='p-6 text-sm text-gray-500'>No tickets</div>
+            <div className='p-6 text-sm text-muted'>No tickets</div>
           ) : (
             tickets.map((t) => (
               <button
                 key={t._id}
                 onClick={() => openTicket(t._id)}
-                className={`w-full text-left px-5 py-4 border-b border-gray-100 hover:bg-gray-50 ${selected?._id === t._id ? 'bg-gray-50' : ''}`}
+                className={`w-full text-left px-5 py-4 border-b border-white/5 hover:bg-white/5 ${selected?._id === t._id ? 'bg-white/5' : ''}`}
               >
                 <div className='flex items-center gap-2 mb-1'>
                   <span className={`text-[10px] px-2 py-0.5 uppercase tracking-widest font-semibold ${STATUS_COLORS[t.status]}`}>{t.status}</span>
-                  <span className='text-xs text-gray-500'>{t.category}</span>
+                  <span className='text-xs text-muted'>{t.category}</span>
                 </div>
                 <p className='font-semibold text-sm truncate'>{t.subject}</p>
-                <p className='text-xs text-gray-500 mt-0.5 truncate'>{t.userName} · {t.userEmail}</p>
-                <p className='text-[11px] text-gray-400 mt-1'>
+                <p className='text-xs text-muted mt-0.5 truncate'>{t.userName} · {t.userEmail}</p>
+                <p className='text-[11px] text-faint mt-1'>
                   {t.messages.length} msg · {new Date(t.updatedAt).toLocaleString()}
                 </p>
               </button>
@@ -121,18 +121,18 @@ const Tickets = ({ token }) => {
         </div>
 
         {/* Thread */}
-        <div className='bg-white border border-gray-200 min-h-[78vh] flex flex-col'>
+        <div className='glass border border-white/10 min-h-[78vh] flex flex-col'>
           {!selected ? (
-            <div className='flex-1 flex items-center justify-center text-sm text-gray-400'>
+            <div className='flex-1 flex items-center justify-center text-sm text-faint'>
               Select a ticket to view the conversation
             </div>
           ) : (
             <>
-              <div className='border-b border-gray-200 p-5'>
+              <div className='border-b border-white/10 p-5'>
                 <div className='flex flex-wrap items-center justify-between gap-3 mb-2'>
                   <div>
                     <h2 className='text-lg font-bold'>{selected.subject}</h2>
-                    <p className='text-xs text-gray-500 mt-0.5'>
+                    <p className='text-xs text-muted mt-0.5'>
                       {selected.userName} · {selected.userEmail} · {selected.category}
                     </p>
                   </div>
@@ -141,7 +141,7 @@ const Tickets = ({ token }) => {
                       <button
                         key={s}
                         onClick={() => updateStatus(s)}
-                        className={`px-3 py-1 text-[10px] uppercase tracking-widest font-semibold border ${selected.status === s ? 'bg-black text-white border-black' : 'bg-white border-gray-300 hover:border-gray-500'}`}
+                        className={`px-3 py-1 text-[10px] uppercase tracking-widest font-semibold border ${selected.status === s ? 'bg-accent-gradient text-brand-deep border-accent' : 'glass border-white/10 hover:border-gray-500'}`}
                       >
                         {s}
                       </button>
@@ -150,10 +150,10 @@ const Tickets = ({ token }) => {
                 </div>
               </div>
 
-              <div className='flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50'>
+              <div className='flex-1 overflow-y-auto p-5 space-y-4 bg-white/5'>
                 {selected.messages.map((m) => (
                   <div key={m._id} className={`flex ${m.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[75%] p-4 border ${m.sender === 'admin' ? 'bg-black text-white border-black' : 'bg-white border-gray-200'}`}>
+                    <div className={`max-w-[75%] p-4 border ${m.sender === 'admin' ? 'bg-accent-gradient text-brand-deep border-accent' : 'glass border-white/10'}`}>
                       <p className='text-[10px] uppercase tracking-widest opacity-70 mb-1'>
                         {m.sender === 'admin' ? 'You (Support)' : m.senderName || 'Customer'}
                       </p>
@@ -165,15 +165,15 @@ const Tickets = ({ token }) => {
               </div>
 
               {selected.status !== 'closed' && (
-                <form onSubmit={sendReply} className='border-t border-gray-200 p-4 flex gap-3'>
+                <form onSubmit={sendReply} className='border-t border-white/10 p-4 flex gap-3'>
                   <textarea
                     rows={2}
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
                     placeholder='Type your reply…'
-                    className='flex-1 px-4 py-3 border border-gray-300 focus:border-black outline-none text-sm resize-none'
+                    className='flex-1 px-4 py-3 border border-white/10 focus:border-accent outline-none text-sm resize-none'
                   />
-                  <button disabled={sending} className='bg-black text-white px-6 py-3 text-sm font-semibold uppercase tracking-wide hover:bg-gray-800 disabled:bg-gray-400'>
+                  <button disabled={sending} className='bg-accent-gradient text-brand-deep px-6 py-3 text-sm font-semibold uppercase tracking-wide hover:brightness-110 disabled:bg-gray-400'>
                     {sending ? 'Sending…' : 'Send Reply'}
                   </button>
                 </form>

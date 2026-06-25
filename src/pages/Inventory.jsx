@@ -2,26 +2,42 @@ import React, { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
+import {
+  Boxes, Search, PackagePlus, Barcode, Printer, X, ChevronDown,
+  Tag, RefreshCw, Layers, AlertTriangle, PackageX, Sparkles,
+} from 'lucide-react'
+import {
+  PageHeader, Btn, StatCard, FilterTabs, EmptyState, StatusPill,
+  BulkAddModal, BarcodeExportModal,
+} from '../components/ui'
 
 const Inventory = ({ token }) => {
   const [products, setProducts] = useState([])
   const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // all | low | out | clearance | active
   const [query, setQuery] = useState('')
   const [labelQueue, setLabelQueue] = useState([])
   const [expanded, setExpanded] = useState({})
+  const [selected, setSelected] = useState({}) // productId -> bool
+
+  const [showBulk, setShowBulk] = useState(false)
+  const [showExport, setShowExport] = useState(false)
 
   const fetchAll = async () => {
+    setLoading(true)
     try {
       const [p, s] = await Promise.all([
         axios.get(backendUrl + '/api/product/list'),
-        axios.get(backendUrl + '/api/inventory/summary', { headers: { token } })
+        axios.get(backendUrl + '/api/inventory/summary', { headers: { token } }),
       ])
       if (p.data.success) setProducts(p.data.products)
       if (s.data.success) setSummary(s.data.summary)
     } catch (err) {
       console.log(err)
       toast.error('Failed to load inventory')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -56,6 +72,19 @@ const Inventory = ({ token }) => {
     })
   }, [rows, query, filter])
 
+  const selectedIds = useMemo(() => Object.keys(selected).filter((id) => selected[id]), [selected])
+  const allFilteredSelected = filtered.length > 0 && filtered.every(({ p }) => selected[p._id])
+
+  const toggleAll = () => {
+    setSelected((s) => {
+      const next = { ...s }
+      if (allFilteredSelected) filtered.forEach(({ p }) => { delete next[p._id] })
+      else filtered.forEach(({ p }) => { next[p._id] = true })
+      return next
+    })
+  }
+  const toggleOne = (id) => setSelected((s) => ({ ...s, [id]: !s[id] }))
+
   const updateThreshold = async (id, val) => {
     try {
       await axios.put(backendUrl + '/api/inventory/threshold/' + id, { lowStockThreshold: Number(val) || 0 }, { headers: { token } })
@@ -67,7 +96,7 @@ const Inventory = ({ token }) => {
     try {
       await axios.put(backendUrl + '/api/inventory/clearance/' + p._id, {
         onClearance: !p.onClearance,
-        clearanceDiscountPct: p.clearanceDiscountPct || 20
+        clearanceDiscountPct: p.clearanceDiscountPct || 20,
       }, { headers: { token } })
       fetchAll()
       toast.success(p.onClearance ? 'Removed from clearance' : 'Added to clearance')
@@ -77,7 +106,7 @@ const Inventory = ({ token }) => {
   const setClearanceDiscount = async (p, val) => {
     try {
       await axios.put(backendUrl + '/api/inventory/clearance/' + p._id, {
-        clearanceDiscountPct: Number(val) || 0
+        clearanceDiscountPct: Number(val) || 0,
       }, { headers: { token } })
       fetchAll()
     } catch { toast.error('Failed') }
@@ -94,100 +123,133 @@ const Inventory = ({ token }) => {
     setLabelQueue((q) => [...q, { sku: v.sku, name: p.name, size: v.size, color: v.color, price: p.price }])
   }
   const removeFromQueue = (idx) => setLabelQueue((q) => q.filter((_, i) => i !== idx))
-
-  const printLabels = () => {
-    if (labelQueue.length === 0) return
-    window.print()
-  }
+  const printLabels = () => { if (labelQueue.length > 0) window.print() }
 
   return (
-    <div className='p-6 inventory-page'>
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          .label-sheet, .label-sheet * { visibility: visible; }
-          .label-sheet { position: absolute; left: 0; top: 0; width: 100%; }
+    <div className='p-6'>
+      <PageHeader
+        icon={Boxes}
+        title='Inventory'
+        subtitle='Stock, barcodes, low-stock alerts & clearance'
+        actions={
+          <div className='flex flex-wrap items-center gap-2'>
+            <Btn variant='secondary' size='sm' icon={RefreshCw} onClick={backfillSkus}>Backfill SKUs</Btn>
+            <Btn variant='secondary' size='sm' icon={Barcode} onClick={() => setShowExport(true)}>Barcodes PDF</Btn>
+            <Btn variant='primary' size='sm' icon={PackagePlus} onClick={() => setShowBulk(true)}>Bulk Add</Btn>
+            {labelQueue.length > 0 && (
+              <Btn variant='dark' size='sm' icon={Printer} onClick={printLabels}>
+                Print {labelQueue.length} label{labelQueue.length === 1 ? '' : 's'}
+              </Btn>
+            )}
+          </div>
         }
-      `}</style>
+      />
 
-      <div className='flex flex-wrap items-center justify-between gap-4 mb-6'>
-        <div>
-          <h1 className='text-2xl font-bold'>Inventory Management</h1>
-          <p className='text-sm text-gray-500'>Stock, barcodes, low-stock alerts & clearance</p>
-        </div>
-        <div className='flex gap-2'>
-          <button onClick={backfillSkus} className='px-3 py-2 text-xs font-semibold uppercase tracking-wide border border-gray-300 hover:border-black'>
-            Backfill SKUs
-          </button>
-          {labelQueue.length > 0 && (
-            <button onClick={printLabels} className='px-3 py-2 text-xs font-semibold uppercase tracking-wide bg-black text-white hover:bg-gray-800'>
-              Print {labelQueue.length} label{labelQueue.length === 1 ? '' : 's'}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {summary && (
+      {/* Summary tiles */}
+      {loading ? (
         <div className='grid grid-cols-2 md:grid-cols-5 gap-3 mb-6'>
-          <Tile label='Products' value={summary.totalProducts} />
-          <Tile label='Total SKUs' value={summary.totalSkus} />
-          <Tile label='Low Stock' value={summary.lowStock} tone='amber' onClick={() => setFilter('low')} />
-          <Tile label='Out of Stock' value={summary.outOfStock} tone='red' onClick={() => setFilter('out')} />
-          <Tile label='On Clearance' value={summary.clearance} tone='blue' onClick={() => setFilter('clearance')} />
+          {[0, 1, 2, 3, 4].map((i) => <div key={i} className='skeleton rounded-2xl h-24' />)}
+        </div>
+      ) : summary && (
+        <div className='grid grid-cols-2 md:grid-cols-5 gap-3 mb-6'>
+          <StatCard icon={Layers} label='Products' value={summary.totalProducts} delay={0} />
+          <StatCard icon={Barcode} label='Total SKUs' value={summary.totalSkus} tone='brand' delay={60} />
+          <StatCard icon={AlertTriangle} label='Low Stock' value={summary.lowStock} tone='amber' delay={120} onClick={() => setFilter('low')} />
+          <StatCard icon={PackageX} label='Out of Stock' value={summary.outOfStock} tone='danger' delay={180} onClick={() => setFilter('out')} />
+          <StatCard icon={Tag} label='On Clearance' value={summary.clearance} tone='accent' delay={240} onClick={() => setFilter('clearance')} />
         </div>
       )}
 
-      <div className='flex flex-wrap items-center gap-2 mb-4'>
-        {['all', 'low', 'out', 'clearance', 'active'].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wide border ${filter === f ? 'bg-black text-white border-black' : 'bg-white border-gray-300 hover:border-gray-500'}`}
-          >
-            {f}
-          </button>
-        ))}
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder='Search by name / brand / category…'
-          className='ml-auto px-3 py-1.5 text-sm border border-gray-300 focus:border-black outline-none min-w-[260px]'
+      {/* Controls */}
+      <div className='glass rounded-2xl p-3 mb-4 flex flex-wrap items-center gap-3 animate-slide-up'>
+        <FilterTabs
+          options={['all', 'low', 'out', 'clearance', 'active']}
+          value={filter}
+          onChange={setFilter}
         />
+        <div className='relative ml-auto min-w-[240px]'>
+          <Search size={15} className='absolute left-3 top-1/2 -translate-y-1/2 text-faint pointer-events-none' />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder='Search name / brand / category…'
+            className='w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-surface-2 border border-line text-fg placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent/15 outline-none'
+          />
+        </div>
       </div>
 
+      {selectedIds.length > 0 && (
+        <div className='mb-4 px-4 py-2.5 rounded-xl bg-accent/10 border border-accent/30 text-sm flex items-center gap-3 animate-slide-down'>
+          <span className='font-semibold text-accent'>{selectedIds.length} selected</span>
+          <button onClick={() => setSelected({})} className='text-muted hover:text-fg text-xs underline'>Clear</button>
+          <Btn variant='secondary' size='sm' icon={Barcode} className='ml-auto' onClick={() => setShowExport(true)}>
+            Download selected barcodes
+          </Btn>
+        </div>
+      )}
+
+      {/* Label queue */}
       {labelQueue.length > 0 && (
-        <div className='mb-4 p-3 bg-amber-50 border border-amber-200 text-xs'>
-          <span className='font-semibold'>Label queue:</span>{' '}
+        <div className='mb-4 p-3 rounded-xl bg-amber/10 border border-amber/30 text-xs flex flex-wrap items-center gap-2 animate-slide-down print:hidden'>
+          <Printer size={14} className='text-amber' />
+          <span className='font-semibold text-amber'>Label queue:</span>{' '}
           {labelQueue.map((l, i) => (
-            <span key={i} className='inline-flex items-center gap-1 mr-2 px-2 py-0.5 bg-white border border-amber-300'>
+            <span key={i} className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-2 border border-line text-fg'>
               {l.sku}
-              <button onClick={() => removeFromQueue(i)} className='text-amber-700'>×</button>
+              <button onClick={() => removeFromQueue(i)} className='text-muted hover:text-danger'><X size={12} /></button>
             </span>
           ))}
         </div>
       )}
 
-      <div className='bg-white border border-gray-200'>
-        {filtered.length === 0 ? (
-          <div className='p-8 text-center text-sm text-gray-500'>No products match these filters.</div>
+      {/* Product list */}
+      <div className='glass rounded-2xl overflow-hidden animate-slide-up'>
+        {/* select-all header */}
+        {filtered.length > 0 && (
+          <div className='flex items-center gap-3 px-4 py-2.5 border-b border-line/70 bg-surface/40'>
+            <input
+              type='checkbox'
+              checked={allFilteredSelected}
+              onChange={toggleAll}
+              className='w-4 h-4 accent-accent cursor-pointer'
+            />
+            <span className='text-[11px] font-semibold uppercase tracking-widest text-faint'>
+              Select all ({filtered.length}) · {selectedIds.length} checked
+            </span>
+          </div>
+        )}
+
+        {loading ? (
+          <div className='p-6 space-y-3'>
+            {[0, 1, 2, 3].map((i) => <div key={i} className='skeleton rounded-xl h-16' />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState icon={Boxes} title='No products match these filters' message='Try adjusting your search or filters, or bulk-add new products.' />
         ) : (
           filtered.map(({ p, variants, totalStock, threshold, status }) => {
             const isOpen = expanded[p._id]
+            const isSel = !!selected[p._id]
             return (
-              <div key={p._id} className='border-b border-gray-100 last:border-0'>
-                <div className='px-4 py-3 flex flex-wrap items-center gap-4'>
-                  <img src={Array.isArray(p.image) ? p.image[0] : p.image} alt='' className='w-12 h-12 object-cover bg-gray-100 flex-shrink-0' />
+              <div key={p._id} className='border-b border-line/60 last:border-0'>
+                <div className='px-4 py-3 flex flex-wrap items-center gap-3 hover:bg-surface-2/40 transition-colors'>
+                  <input
+                    type='checkbox'
+                    checked={isSel}
+                    onChange={() => toggleOne(p._id)}
+                    className='w-4 h-4 accent-accent cursor-pointer shrink-0'
+                  />
+                  <img src={Array.isArray(p.image) ? p.image[0] : p.image} alt='' className='w-11 h-11 object-cover rounded-lg bg-surface-2 shrink-0' />
                   <div className='flex-1 min-w-0'>
-                    <p className='font-semibold text-sm truncate'>{p.name}</p>
-                    <p className='text-xs text-gray-500'>{p.category} · {variants.length} variants · ₹{p.price}</p>
+                    <p className='font-semibold text-sm text-fg truncate'>{p.name}</p>
+                    <p className='text-xs text-muted truncate'>{p.category} · {variants.length} variants · ₹{p.price}</p>
                   </div>
-                  <StatusBadge status={status} />
+                  <StatusPill status={status === 'ok' ? 'In stock' : status === 'unknown' ? 'No variants' : status === 'low' ? 'Low' : 'Out'} />
                   <div className='text-right'>
-                    <p className='text-xs text-gray-500'>Total Stock</p>
-                    <p className='font-semibold'>{totalStock}</p>
+                    <p className='text-[10px] uppercase tracking-widest text-faint'>Total Stock</p>
+                    <p className='font-heading font-bold text-fg'>{totalStock}</p>
                   </div>
-                  <div className='flex items-center gap-1'>
-                    <label className='text-[10px] uppercase tracking-widest text-gray-500'>Low @</label>
+                  <div className='flex items-center gap-1.5'>
+                    <label className='text-[10px] uppercase tracking-widest text-faint'>Low @</label>
                     <input
                       type='number'
                       defaultValue={threshold}
@@ -195,65 +257,72 @@ const Inventory = ({ token }) => {
                         const v = parseInt(e.target.value)
                         if (!isNaN(v) && v !== threshold) updateThreshold(p._id, v)
                       }}
-                      className='w-14 px-2 py-1 border border-gray-300 text-sm'
+                      className='w-14 px-2 py-1 text-sm rounded-lg bg-surface-2 border border-line text-fg focus:border-accent outline-none'
                     />
                   </div>
                   <div className='flex items-center gap-2'>
                     <button
                       onClick={() => toggleClearance(p)}
-                      className={`px-3 py-1.5 text-[10px] uppercase tracking-widest font-semibold border ${p.onClearance ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-gray-300 hover:border-gray-500'}`}
+                      className={`px-3 py-1.5 text-[10px] uppercase tracking-widest font-semibold rounded-lg border transition-all ${
+                        p.onClearance
+                          ? 'bg-accent/20 text-accent border-accent/40'
+                          : 'bg-surface-2 text-muted border-line hover:border-accent/50'
+                      }`}
                     >
                       {p.onClearance ? `Clearance −${p.clearanceDiscountPct || 0}%` : 'Mark Clearance'}
                     </button>
                     {p.onClearance && (
                       <input
-                        type='number'
-                        min='0' max='95'
+                        type='number' min='0' max='95'
                         defaultValue={p.clearanceDiscountPct || 0}
                         onBlur={(e) => setClearanceDiscount(p, e.target.value)}
-                        className='w-14 px-2 py-1 border border-gray-300 text-sm'
+                        className='w-14 px-2 py-1 text-sm rounded-lg bg-surface-2 border border-line text-fg focus:border-accent outline-none'
                       />
                     )}
                   </div>
-                  <button onClick={() => setExpanded((x) => ({ ...x, [p._id]: !x[p._id] }))} className='text-xs text-gray-500 hover:text-black underline'>
-                    {isOpen ? 'Hide variants' : 'Variants'}
+                  <button
+                    onClick={() => setExpanded((x) => ({ ...x, [p._id]: !x[p._id] }))}
+                    className='inline-flex items-center gap-1 text-xs text-muted hover:text-fg transition-colors'
+                  >
+                    {isOpen ? 'Hide' : 'Variants'}
+                    <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
 
                 {isOpen && variants.length > 0 && (
-                  <div className='bg-gray-50 px-4 py-3 border-t border-gray-100'>
+                  <div className='bg-ink/40 px-4 py-3 border-t border-line/60 animate-fade-in'>
                     <table className='w-full text-sm'>
                       <thead>
-                        <tr className='text-[10px] uppercase tracking-widest text-gray-500'>
-                          <th className='text-left py-1.5'>Size</th>
-                          <th className='text-left py-1.5'>Color</th>
-                          <th className='text-left py-1.5'>SKU / Barcode</th>
-                          <th className='text-left py-1.5'>Stock</th>
-                          <th></th>
+                        <tr className='text-[10px] uppercase tracking-widest text-faint'>
+                          <th className='text-left py-1.5 font-semibold'>Size</th>
+                          <th className='text-left py-1.5 font-semibold'>Color</th>
+                          <th className='text-left py-1.5 font-semibold'>SKU / Barcode</th>
+                          <th className='text-left py-1.5 font-semibold'>Stock</th>
+                          <th className='text-right py-1.5 font-semibold'></th>
                         </tr>
                       </thead>
                       <tbody>
                         {variants.map((v) => (
-                          <tr key={v._id || v.sku} className='border-t border-gray-200'>
-                            <td className='py-2'>{v.size}</td>
+                          <tr key={v._id || v.sku} className='border-t border-line/50'>
+                            <td className='py-2 text-fg'>{v.size}</td>
                             <td className='py-2'>
-                              <span className='inline-flex items-center gap-2'>
-                                <span className='w-4 h-4 inline-block border border-gray-300' style={{ background: v.colorCode || 'transparent' }}></span>
+                              <span className='inline-flex items-center gap-2 text-fg'>
+                                <span className='w-4 h-4 inline-block rounded border border-line' style={{ background: v.colorCode || 'transparent' }}></span>
                                 {v.color}
                               </span>
                             </td>
                             <td className='py-2'>
-                              <p className='font-mono text-xs'>{v.sku || '—'}</p>
+                              <p className='font-mono text-xs text-muted'>{v.sku || '—'}</p>
                               {v.sku && (
                                 <img
                                   src={backendUrl + '/api/inventory/barcode/' + encodeURIComponent(v.sku)}
                                   alt={v.sku}
-                                  className='h-8 mt-1'
+                                  className='h-8 mt-1 rounded bg-white px-1'
                                 />
                               )}
                             </td>
                             <td className='py-2'>
-                              <span className={`font-semibold ${v.stock <= 0 ? 'text-red-600' : v.stock <= threshold ? 'text-amber-600' : ''}`}>
+                              <span className={`font-semibold ${v.stock <= 0 ? 'text-danger' : v.stock <= threshold ? 'text-amber' : 'text-fg'}`}>
                                 {v.stock}
                               </span>
                             </td>
@@ -261,7 +330,7 @@ const Inventory = ({ token }) => {
                               <button
                                 onClick={() => queueLabel(p, v)}
                                 disabled={!v.sku}
-                                className='text-[10px] uppercase tracking-widest font-semibold border border-gray-300 px-2 py-1 hover:border-black disabled:opacity-40'
+                                className='text-[10px] uppercase tracking-widest font-semibold border border-line rounded-lg px-2.5 py-1 text-muted hover:text-accent hover:border-accent/50 disabled:opacity-30 transition-all'
                               >
                                 Queue Label
                               </button>
@@ -278,56 +347,32 @@ const Inventory = ({ token }) => {
         )}
       </div>
 
+      {/* Print-only label sheet */}
       {labelQueue.length > 0 && (
         <div className='label-sheet hidden print:block p-4'>
           <div className='grid grid-cols-3 gap-3'>
             {labelQueue.map((l, i) => (
               <div key={i} className='border border-black p-2 text-center'>
-                <p className='text-[10px] font-semibold uppercase tracking-widest'>LOCOXO</p>
-                <p className='text-xs font-bold mt-1 truncate'>{l.name}</p>
-                <p className='text-[10px]'>Size {l.size} · {l.color}</p>
+                <p className='text-[10px] font-semibold uppercase tracking-widest text-black'>LOCOXO</p>
+                <p className='text-xs font-bold mt-1 truncate text-black'>{l.name}</p>
+                <p className='text-[10px] text-black'>Size {l.size} · {l.color}</p>
                 <img
                   src={backendUrl + '/api/inventory/barcode/' + encodeURIComponent(l.sku) + '?scale=3&h=18'}
                   alt={l.sku}
                   className='mx-auto my-2 h-12'
                 />
-                <p className='text-[10px]'>₹{l.price}</p>
+                <p className='text-[10px] text-black'>₹{l.price}</p>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <BulkAddModal open={showBulk} onClose={() => setShowBulk(false)} token={token} onDone={fetchAll} />
+      <BarcodeExportModal open={showExport} onClose={() => setShowExport(false)} token={token} selectedIds={selectedIds} defaultFilter={filter === 'all' ? 'all' : filter} />
     </div>
   )
-}
-
-const Tile = ({ label, value, tone, onClick }) => {
-  const tones = {
-    amber: 'border-amber-200 bg-amber-50',
-    red:   'border-red-200 bg-red-50',
-    blue:  'border-blue-200 bg-blue-50',
-  }
-  return (
-    <button
-      onClick={onClick}
-      disabled={!onClick}
-      className={`p-4 border text-left ${tones[tone] || 'border-gray-200 bg-white'} ${onClick ? 'hover:shadow-sm' : ''}`}
-    >
-      <p className='text-[10px] uppercase tracking-widest text-gray-500 mb-1'>{label}</p>
-      <p className='text-2xl font-bold'>{value}</p>
-    </button>
-  )
-}
-
-const StatusBadge = ({ status }) => {
-  const map = {
-    ok:  ['bg-green-100 text-green-700', 'In stock'],
-    low: ['bg-amber-100 text-amber-700', 'Low'],
-    out: ['bg-red-100 text-red-700', 'Out'],
-    unknown: ['bg-gray-100 text-gray-500', 'No variants'],
-  }
-  const [cls, label] = map[status] || map.unknown
-  return <span className={`text-[10px] px-2 py-0.5 uppercase tracking-widest font-semibold ${cls}`}>{label}</span>
 }
 
 export default Inventory

@@ -102,7 +102,7 @@ const Coupons = ({ token }) => {
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
         {/* Add Coupon Form */}
-        <div className='bg-white border border-gray-200 rounded-lg shadow-sm p-6'>
+        <div className='glass border border-white/10 rounded-lg shadow-sm p-6'>
           <h2 className='text-xl font-bold mb-6'>Create New Coupon</h2>
           <form onSubmit={onSubmitHandler} className='space-y-4'>
             <div>
@@ -111,7 +111,7 @@ const Coupons = ({ token }) => {
                 type='text'
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all uppercase'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all uppercase'
                 placeholder='e.g., SAVE20'
                 required
               />
@@ -121,7 +121,7 @@ const Coupons = ({ token }) => {
               <select
                 value={discountType}
                 onChange={(e) => setDiscountType(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
               >
                 <option value='percentage'>Percentage (%)</option>
                 <option value='fixed'>Fixed Amount ($)</option>
@@ -133,7 +133,7 @@ const Coupons = ({ token }) => {
                 type='number'
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
                 placeholder={discountType === 'percentage' ? 'e.g., 20' : 'e.g., 50'}
                 required
               />
@@ -144,7 +144,7 @@ const Coupons = ({ token }) => {
                 type='date'
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
                 required
               />
             </div>
@@ -154,7 +154,7 @@ const Coupons = ({ token }) => {
                 type='number'
                 value={minPurchase}
                 onChange={(e) => setMinPurchase(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
                 placeholder='0'
               />
             </div>
@@ -165,7 +165,7 @@ const Coupons = ({ token }) => {
                   type='number'
                   value={maxDiscount}
                   onChange={(e) => setMaxDiscount(e.target.value)}
-                  className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                  className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
                   placeholder='0 (unlimited)'
                 />
               </div>
@@ -182,7 +182,7 @@ const Coupons = ({ token }) => {
             </div>
             <button
               type='submit'
-              className='w-full bg-black text-white py-3 font-semibold rounded-lg hover:bg-gray-800 transition-colors'
+              className='w-full bg-accent-gradient text-brand-deep py-3 font-semibold rounded-lg hover:brightness-110 transition-colors'
             >
               Create Coupon
             </button>
@@ -190,32 +190,32 @@ const Coupons = ({ token }) => {
         </div>
 
         {/* Coupons List */}
-        <div className='lg:col-span-2 bg-white border border-gray-200 rounded-lg shadow-sm p-6'>
+        <div className='lg:col-span-2 glass border border-white/10 rounded-lg shadow-sm p-6'>
           <h2 className='text-xl font-bold mb-6'>All Coupons ({coupons.length})</h2>
           <div className='space-y-3'>
             {coupons.length > 0 ? (
               coupons.map((coupon, index) => (
-                <div key={index} className='flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition-all'>
+                <div key={index} className='flex items-center justify-between p-4 border border-white/10 rounded-lg hover:shadow-md transition-all'>
                   <div className='flex-1'>
                     <div className='flex items-center gap-3 mb-2'>
                       <h3 className='font-bold text-lg'>{coupon.code}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${coupon.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${coupon.isActive ? 'bg-green-100 text-green-700' : 'bg-white/5 text-fg'}`}>
                         {coupon.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-sm text-muted'>
                       {coupon.discountType === 'percentage' ? `${coupon.discount}% off` : `$${coupon.discount} off`}
                       {coupon.minPurchase > 0 && ` • Min: $${coupon.minPurchase}`}
                       {coupon.maxDiscount > 0 && ` • Max: $${coupon.maxDiscount}`}
                     </p>
-                    <p className='text-xs text-gray-500 mt-1'>
+                    <p className='text-xs text-muted mt-1'>
                       Expires: {new Date(coupon.expiryDate).toLocaleDateString()}
                     </p>
                   </div>
                   <div className='flex gap-2'>
                     <button
                       onClick={() => toggleStatus(coupon._id, coupon.isActive)}
-                      className='px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-sm'
+                      className='px-4 py-2 bg-white/5 text-fg rounded-lg font-semibold hover:bg-white/10 transition-colors text-sm'
                     >
                       {coupon.isActive ? 'Deactivate' : 'Activate'}
                     </button>
@@ -229,7 +229,7 @@ const Coupons = ({ token }) => {
                 </div>
               ))
             ) : (
-              <p className='text-center text-gray-500 py-8'>No coupons yet. Create your first coupon!</p>
+              <p className='text-center text-muted py-8'>No coupons yet. Create your first coupon!</p>
             )}
           </div>
         </div>

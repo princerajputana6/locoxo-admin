@@ -33,9 +33,9 @@ const Customers = ({ token }) => {
       <div className='flex items-center justify-between mb-8'>
         <div>
           <h1 className='text-3xl font-bold'>Customers</h1>
-          <p className='text-sm text-gray-600 mt-1'>Manage your customer database</p>
+          <p className='text-sm text-muted mt-1'>Manage your customer database</p>
         </div>
-        <div className='bg-black text-white px-6 py-3 font-semibold rounded-lg shadow-md'>
+        <div className='bg-accent-gradient text-brand-deep px-6 py-3 font-semibold rounded-lg shadow-md'>
           {customers.length} Customers
         </div>
       </div>
@@ -47,33 +47,33 @@ const Customers = ({ token }) => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder='Search customers by name or email...'
-          className='w-full max-w-md px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+          className='w-full max-w-md px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
         />
       </div>
 
       {/* Customers Table */}
-      <div className='bg-white border border-gray-200 rounded-lg shadow-sm p-6'>
+      <div className='glass border border-white/10 rounded-lg shadow-sm p-6'>
         <div className='overflow-x-auto'>
           <table className='w-full'>
             <thead>
-              <tr className='border-b border-gray-200'>
-                <th className='text-left py-3 px-4 font-semibold text-gray-700'>Name</th>
-                <th className='text-left py-3 px-4 font-semibold text-gray-700'>Email</th>
-                <th className='text-left py-3 px-4 font-semibold text-gray-700'>Joined Date</th>
-                <th className='text-center py-3 px-4 font-semibold text-gray-700'>Actions</th>
+              <tr className='border-b border-white/10'>
+                <th className='text-left py-3 px-4 font-semibold text-fg'>Name</th>
+                <th className='text-left py-3 px-4 font-semibold text-fg'>Email</th>
+                <th className='text-left py-3 px-4 font-semibold text-fg'>Joined Date</th>
+                <th className='text-center py-3 px-4 font-semibold text-fg'>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredCustomers.length > 0 ? (
                 filteredCustomers.map((customer, index) => (
-                  <tr key={index} className='border-b border-gray-100 hover:bg-gray-50 transition-colors'>
+                  <tr key={index} className='border-b border-white/5 hover:bg-white/5 transition-colors'>
                     <td className='py-4 px-4 font-medium'>{customer.name || 'N/A'}</td>
-                    <td className='py-4 px-4 text-gray-600'>{customer.email}</td>
-                    <td className='py-4 px-4 text-gray-600'>
+                    <td className='py-4 px-4 text-muted'>{customer.email}</td>
+                    <td className='py-4 px-4 text-muted'>
                       {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className='py-4 px-4 text-center'>
-                      <button className='px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-sm'>
+                      <button className='px-4 py-2 bg-white/5 text-fg rounded-lg font-semibold hover:bg-white/10 transition-colors text-sm'>
                         View Details
                       </button>
                     </td>
@@ -81,7 +81,7 @@ const Customers = ({ token }) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan='4' className='text-center py-8 text-gray-500'>
+                  <td colSpan='4' className='text-center py-8 text-muted'>
                     {searchTerm ? 'No customers found matching your search' : 'No customers yet'}
                   </td>
                 </tr>

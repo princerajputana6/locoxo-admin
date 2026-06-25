@@ -152,12 +152,12 @@ const Orders = ({ token }) => {
         <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4'>
           <div>
             <h1 className='text-3xl font-bold'>Orders Management</h1>
-            <p className='text-sm text-gray-600 mt-1'>View and manage customer orders</p>
+            <p className='text-sm text-muted mt-1'>View and manage customer orders</p>
           </div>
           <button
             onClick={downloadAllInvoices}
             disabled={downloadingAll || filteredOrders.length === 0}
-            className='bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed'
+            className='bg-accent-gradient text-brand-deep px-6 py-3 rounded-lg font-semibold hover:brightness-110 transition-colors flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed'
           >
             <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
@@ -172,8 +172,8 @@ const Orders = ({ token }) => {
             onClick={() => handleFilterChange('All')}
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
               statusFilter === 'All'
-                ? 'bg-black text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-accent-gradient text-brand-deep'
+                : 'bg-white/10 text-fg hover:bg-gray-300'
             }`}
           >
             All Orders ({orders.length})
@@ -233,12 +233,12 @@ const Orders = ({ token }) => {
 
       {/* Orders List */}
       {filteredOrders.length === 0 ? (
-        <div className='text-center py-20 bg-white rounded-lg border border-gray-200'>
+        <div className='text-center py-20 glass rounded-lg border border-white/10'>
           <svg className='w-16 h-16 mx-auto mb-4 text-gray-300' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
             <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={1.5} d='M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4' />
           </svg>
-          <h3 className='text-xl font-semibold text-gray-600 mb-2'>No orders found</h3>
-          <p className='text-gray-500'>
+          <h3 className='text-xl font-semibold text-muted mb-2'>No orders found</h3>
+          <p className='text-muted'>
             {statusFilter === 'All' 
               ? 'No orders have been placed yet' 
               : `No orders with status "${statusFilter}"`
@@ -249,10 +249,10 @@ const Orders = ({ token }) => {
         <div className='space-y-4'>
           {
             filteredOrders.map((order, index) => (
-            <div className='bg-white border border-gray-200 rounded-lg shadow-sm p-6 hover:shadow-lg transition-all' key={index}>
+            <div className='glass border border-white/10 rounded-lg shadow-sm p-6 hover:shadow-lg transition-all' key={index}>
               <div className='grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-6'>
               <div className='flex gap-4'>
-                <div className='w-12 h-12 bg-black flex items-center justify-center flex-shrink-0'>
+                <div className='w-12 h-12 bg-surface-3 flex items-center justify-center flex-shrink-0'>
                   <svg className='w-6 h-6 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                     <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' />
                   </svg>
@@ -262,16 +262,16 @@ const Orders = ({ token }) => {
                     <p className='font-bold text-sm uppercase tracking-wide mb-2'>Order Items</p>
                     {order.items.map((item, index) => (
                       <p className='text-sm py-0.5' key={index}>
-                        {item.name} x {item.quantity} <span className='text-gray-600'>({item.size})</span>
+                        {item.name} x {item.quantity} <span className='text-muted'>({item.size})</span>
                       </p>
                     ))}
                   </div>
                   <div>
                     <p className='font-bold text-sm uppercase tracking-wide mb-1'>Customer</p>
-                    <p className='font-semibold'>{order.address.firstName + " " + order.address.lastName}</p>
-                    <p className='text-sm text-gray-600'>{order.address.street}</p>
-                    <p className='text-sm text-gray-600'>{order.address.city + ", " + order.address.state + ", " + order.address.zipcode}</p>
-                    <p className='text-sm text-gray-600'>{order.address.phone}</p>
+                    <p className='font-semibold'>{order.address.name || (order.address.firstName ? order.address.firstName + " " + (order.address.lastName || '') : 'Customer')}</p>
+                    <p className='text-sm text-muted'>{order.address.addressLine1 || order.address.street}</p>
+                    <p className='text-sm text-muted'>{order.address.city + ", " + order.address.state + ", " + (order.address.pincode || order.address.zipcode || '')}</p>
+                    <p className='text-sm text-muted'>{order.address.phone}</p>
                   </div>
                 </div>
               </div>
@@ -288,7 +288,7 @@ const Orders = ({ token }) => {
               </div>
               <div>
                 <p className='font-bold text-sm uppercase tracking-wide mb-2'>Update Status</p>
-                <select onChange={(event)=>statusHandler(event,order._id)} value={order.status} className='w-full px-4 py-3 border border-gray-300 rounded-lg bg-white font-semibold focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all mb-3'>
+                <select onChange={(event)=>statusHandler(event,order._id)} value={order.status} className='w-full px-4 py-3 border border-white/10 rounded-lg glass font-semibold focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all mb-3'>
                   <option value="Order Placed">Order Placed</option>
                   <option value="Packing">Packing</option>
                   <option value="Shipped">Shipped</option>
@@ -298,7 +298,7 @@ const Orders = ({ token }) => {
                 {order.orderNumber && (
                   <button
                     onClick={() => downloadInvoice(order._id, order.orderNumber)}
-                    className='w-full px-4 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-2'
+                    className='w-full px-4 py-3 bg-accent-gradient text-brand-deep rounded-lg font-semibold hover:brightness-110 transition-colors flex items-center justify-center gap-2 mb-2'
                   >
                     <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                       <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
@@ -307,8 +307,8 @@ const Orders = ({ token }) => {
                   </button>
                 )}
                 {order.trackingNumber ? (
-                  <div className='mt-2 p-2 border border-gray-200 text-xs'>
-                    <p className='text-[10px] uppercase tracking-widest text-gray-500 mb-1'>Shipment</p>
+                  <div className='mt-2 p-2 border border-white/10 text-xs'>
+                    <p className='text-[10px] uppercase tracking-widest text-muted mb-1'>Shipment</p>
                     <p className='font-mono break-all mb-2'>{order.trackingNumber}</p>
                     <div className='flex flex-wrap gap-1'>
                       {['picked_up', 'in_transit', 'out_for_delivery', 'delivered'].map((s) => (
@@ -319,7 +319,7 @@ const Orders = ({ token }) => {
                             const { data } = await axios.get(backendUrl + '/api/shipment/admin/order/' + order._id, { headers: { token } })
                             if (data.success && data.shipment) pushEvent(data.shipment._id, s)
                           }}
-                          className='text-[9px] uppercase tracking-widest px-1.5 py-1 border border-gray-300 hover:border-black'
+                          className='text-[9px] uppercase tracking-widest px-1.5 py-1 border border-white/10 hover:border-accent'
                         >
                           {s.replace(/_/g, ' ')}
                         </button>
@@ -329,7 +329,7 @@ const Orders = ({ token }) => {
                 ) : (
                   <button
                     onClick={() => createShipment(order._id)}
-                    className='w-full px-4 py-2 border border-black text-sm font-semibold hover:bg-black hover:text-white'
+                    className='w-full px-4 py-2 border border-accent text-sm font-semibold hover:brightness-110'
                   >
                     Create Shipment
                   </button>

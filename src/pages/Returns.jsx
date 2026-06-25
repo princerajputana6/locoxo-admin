@@ -49,30 +49,30 @@ const Returns = ({ token }) => {
       <div className='flex items-center justify-between mb-8'>
         <div>
           <h1 className='text-3xl font-bold'>Returns & Refunds</h1>
-          <p className='text-sm text-gray-600 mt-1'>Manage product returns and refund requests</p>
+          <p className='text-sm text-muted mt-1'>Manage product returns and refund requests</p>
         </div>
         <div className='flex gap-3'>
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${filter === 'all' ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${filter === 'all' ? 'bg-accent-gradient text-brand-deep' : 'bg-white/5 text-fg hover:bg-white/10'}`}
           >
             All
           </button>
           <button
             onClick={() => setFilter('pending')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${filter === 'pending' ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${filter === 'pending' ? 'bg-accent-gradient text-brand-deep' : 'bg-white/5 text-fg hover:bg-white/10'}`}
           >
             Pending
           </button>
           <button
             onClick={() => setFilter('approved')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${filter === 'approved' ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${filter === 'approved' ? 'bg-accent-gradient text-brand-deep' : 'bg-white/5 text-fg hover:bg-white/10'}`}
           >
             Approved
           </button>
           <button
             onClick={() => setFilter('rejected')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${filter === 'rejected' ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${filter === 'rejected' ? 'bg-accent-gradient text-brand-deep' : 'bg-white/5 text-fg hover:bg-white/10'}`}
           >
             Rejected
           </button>
@@ -81,36 +81,36 @@ const Returns = ({ token }) => {
 
       {/* Returns Stats */}
       <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-8'>
-        <div className='bg-white border border-gray-200 rounded-lg p-6 shadow-sm'>
-          <h3 className='text-sm font-semibold text-gray-600 mb-2'>Total Returns</h3>
+        <div className='glass border border-white/10 rounded-lg p-6 shadow-sm'>
+          <h3 className='text-sm font-semibold text-muted mb-2'>Total Returns</h3>
           <p className='text-3xl font-bold'>{returns.length}</p>
         </div>
-        <div className='bg-white border border-gray-200 rounded-lg p-6 shadow-sm'>
-          <h3 className='text-sm font-semibold text-gray-600 mb-2'>Pending</h3>
+        <div className='glass border border-white/10 rounded-lg p-6 shadow-sm'>
+          <h3 className='text-sm font-semibold text-muted mb-2'>Pending</h3>
           <p className='text-3xl font-bold text-orange-600'>{returns.filter(r => r.status === 'pending').length}</p>
         </div>
-        <div className='bg-white border border-gray-200 rounded-lg p-6 shadow-sm'>
-          <h3 className='text-sm font-semibold text-gray-600 mb-2'>Approved</h3>
+        <div className='glass border border-white/10 rounded-lg p-6 shadow-sm'>
+          <h3 className='text-sm font-semibold text-muted mb-2'>Approved</h3>
           <p className='text-3xl font-bold text-green-600'>{returns.filter(r => r.status === 'approved').length}</p>
         </div>
-        <div className='bg-white border border-gray-200 rounded-lg p-6 shadow-sm'>
-          <h3 className='text-sm font-semibold text-gray-600 mb-2'>Rejected</h3>
+        <div className='glass border border-white/10 rounded-lg p-6 shadow-sm'>
+          <h3 className='text-sm font-semibold text-muted mb-2'>Rejected</h3>
           <p className='text-3xl font-bold text-red-600'>{returns.filter(r => r.status === 'rejected').length}</p>
         </div>
       </div>
 
       {/* Returns List */}
-      <div className='bg-white border border-gray-200 rounded-lg shadow-sm p-6'>
+      <div className='glass border border-white/10 rounded-lg shadow-sm p-6'>
         <h2 className='text-xl font-bold mb-6'>Return Requests ({filteredReturns.length})</h2>
         <div className='space-y-4'>
           {filteredReturns.length > 0 ? (
             filteredReturns.map((returnItem, index) => (
-              <div key={index} className='border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all'>
+              <div key={index} className='border border-white/10 rounded-lg p-4 hover:shadow-md transition-all'>
                 <div className='flex items-start justify-between mb-3'>
                   <div>
                     <h3 className='font-bold text-lg'>Return #{returnItem._id?.slice(-6)}</h3>
-                    <p className='text-sm text-gray-600'>Order: {returnItem.orderId?.slice(-6)}</p>
-                    <p className='text-sm text-gray-600'>Customer: {returnItem.customerEmail}</p>
+                    <p className='text-sm text-muted'>Order: {returnItem.orderId?.slice(-6)}</p>
+                    <p className='text-sm text-muted'>Customer: {returnItem.customerEmail}</p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     returnItem.status === 'pending' ? 'bg-orange-100 text-orange-700' :
@@ -122,9 +122,9 @@ const Returns = ({ token }) => {
                 </div>
                 <div className='mb-3'>
                   <p className='text-sm font-semibold'>Reason:</p>
-                  <p className='text-sm text-gray-600'>{returnItem.reason}</p>
+                  <p className='text-sm text-muted'>{returnItem.reason}</p>
                 </div>
-                <div className='text-xs text-gray-500 mb-3'>
+                <div className='text-xs text-muted mb-3'>
                   Requested: {new Date(returnItem.createdAt).toLocaleDateString()}
                 </div>
                 {returnItem.status === 'pending' && (
@@ -146,7 +146,7 @@ const Returns = ({ token }) => {
               </div>
             ))
           ) : (
-            <p className='text-center text-gray-500 py-8'>
+            <p className='text-center text-muted py-8'>
               {filter === 'all' ? 'No return requests yet' : `No ${filter} returns`}
             </p>
           )}

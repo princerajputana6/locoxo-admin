@@ -49,8 +49,8 @@ const InfluencerDashboard = ({ token, userData }) => {
     return (
       <div className='flex items-center justify-center min-h-screen'>
         <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4'></div>
-          <p className='text-gray-600'>Loading dashboard...</p>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4'></div>
+          <p className='text-muted'>Loading dashboard...</p>
         </div>
       </div>
     )
@@ -59,7 +59,7 @@ const InfluencerDashboard = ({ token, userData }) => {
   if (!dashboardData) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
-        <p className='text-gray-600'>No data available</p>
+        <p className='text-muted'>No data available</p>
       </div>
     )
   }
@@ -71,7 +71,7 @@ const InfluencerDashboard = ({ token, userData }) => {
       {/* Welcome Header */}
       <div className='mb-8'>
         <h1 className='text-4xl font-bold mb-2'>Welcome, {profile.name}! 👋</h1>
-        <p className='text-gray-600'>Here's your performance overview</p>
+        <p className='text-muted'>Here's your performance overview</p>
       </div>
 
       {/* Referral Code Card */}
@@ -83,7 +83,7 @@ const InfluencerDashboard = ({ token, userData }) => {
           </div>
           <button
             onClick={copyReferralCode}
-            className='bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center gap-2 w-fit'
+            className='glass text-fg px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors flex items-center gap-2 w-fit'
           >
             {copied ? (
               <>
@@ -106,57 +106,57 @@ const InfluencerDashboard = ({ token, userData }) => {
       {/* Stats Grid */}
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
         {/* Total Clicks */}
-        <div className='bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow'>
+        <div className='glass border border-white/10 rounded-xl p-6 hover:shadow-lg transition-shadow'>
           <div className='flex items-center justify-between mb-4'>
             <div className='w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center'>
               <MousePointer className='w-6 h-6 text-blue-600' />
             </div>
           </div>
           <p className='text-3xl font-bold mb-1'>{stats.totalClicks}</p>
-          <p className='text-sm text-gray-600'>Total Clicks</p>
+          <p className='text-sm text-muted'>Total Clicks</p>
         </div>
 
         {/* Total Conversions */}
-        <div className='bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow'>
+        <div className='glass border border-white/10 rounded-xl p-6 hover:shadow-lg transition-shadow'>
           <div className='flex items-center justify-between mb-4'>
             <div className='w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center'>
               <Users className='w-6 h-6 text-green-600' />
             </div>
           </div>
           <p className='text-3xl font-bold mb-1'>{stats.totalConversions}</p>
-          <p className='text-sm text-gray-600'>Conversions</p>
+          <p className='text-sm text-muted'>Conversions</p>
         </div>
 
         {/* Total Sales */}
-        <div className='bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow'>
+        <div className='glass border border-white/10 rounded-xl p-6 hover:shadow-lg transition-shadow'>
           <div className='flex items-center justify-between mb-4'>
             <div className='w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center'>
               <TrendingUp className='w-6 h-6 text-purple-600' />
             </div>
           </div>
           <p className='text-3xl font-bold mb-1'>{currency}{stats.totalSales.toLocaleString()}</p>
-          <p className='text-sm text-gray-600'>Total Sales</p>
+          <p className='text-sm text-muted'>Total Sales</p>
         </div>
 
         {/* Total Earnings */}
-        <div className='bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow bg-gradient-to-br from-yellow-50 to-orange-50'>
+        <div className='glass border border-white/10 rounded-xl p-6 hover:shadow-lg transition-shadow bg-gradient-to-br from-yellow-50 to-orange-50'>
           <div className='flex items-center justify-between mb-4'>
             <div className='w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center'>
               <DollarSign className='w-6 h-6 text-yellow-600' />
             </div>
           </div>
           <p className='text-3xl font-bold mb-1 text-yellow-700'>{currency}{stats.totalEarnings.toLocaleString()}</p>
-          <p className='text-sm text-gray-600'>Your Earnings</p>
+          <p className='text-sm text-muted'>Your Earnings</p>
         </div>
       </div>
 
       {/* Conversion Rate */}
-      <div className='bg-white border border-gray-200 rounded-xl p-6 mb-8'>
+      <div className='glass border border-white/10 rounded-xl p-6 mb-8'>
         <h3 className='text-lg font-bold mb-4'>Performance Metrics</h3>
         <div className='flex items-center gap-4'>
           <div className='flex-1'>
-            <p className='text-sm text-gray-600 mb-2'>Conversion Rate</p>
-            <div className='w-full bg-gray-200 rounded-full h-4 overflow-hidden'>
+            <p className='text-sm text-muted mb-2'>Conversion Rate</p>
+            <div className='w-full bg-white/10 rounded-full h-4 overflow-hidden'>
               <div
                 className='bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500'
                 style={{ width: `${Math.min(stats.conversionRate, 100)}%` }}
@@ -171,10 +171,10 @@ const InfluencerDashboard = ({ token, userData }) => {
 
       {/* Assigned Product */}
       {product && (
-        <div className='bg-white border border-gray-200 rounded-xl p-6'>
+        <div className='glass border border-white/10 rounded-xl p-6'>
           <h3 className='text-lg font-bold mb-4'>Your Assigned Product</h3>
           <div className='flex flex-col md:flex-row gap-6'>
-            <div className='w-full md:w-48 h-48 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0'>
+            <div className='w-full md:w-48 h-48 bg-white/5 rounded-lg overflow-hidden flex-shrink-0'>
               <img
                 src={product.image[0]}
                 alt={product.name}
@@ -183,9 +183,9 @@ const InfluencerDashboard = ({ token, userData }) => {
             </div>
             <div className='flex-1'>
               <h4 className='text-2xl font-bold mb-2'>{product.name}</h4>
-              <p className='text-3xl font-bold text-black mb-4'>{currency}{product.price}</p>
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-sm text-gray-600 mb-2'>Share this product with your referral code to earn commission!</p>
+              <p className='text-3xl font-bold text-fg mb-4'>{currency}{product.price}</p>
+              <div className='bg-white/5 rounded-lg p-4'>
+                <p className='text-sm text-muted mb-2'>Share this product with your referral code to earn commission!</p>
                 <p className='text-sm font-semibold'>Your Commission: {currency}{(product.price * profile.commissionRate / 100).toFixed(2)} per sale</p>
               </div>
             </div>
@@ -194,27 +194,27 @@ const InfluencerDashboard = ({ token, userData }) => {
       )}
 
       {/* Profile Info */}
-      <div className='bg-white border border-gray-200 rounded-xl p-6 mt-8'>
+      <div className='glass border border-white/10 rounded-xl p-6 mt-8'>
         <h3 className='text-lg font-bold mb-4'>Profile Information</h3>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           <div>
-            <p className='text-sm text-gray-600'>Email</p>
+            <p className='text-sm text-muted'>Email</p>
             <p className='font-semibold'>{profile.email}</p>
           </div>
           {profile.phone && (
             <div>
-              <p className='text-sm text-gray-600'>Phone</p>
+              <p className='text-sm text-muted'>Phone</p>
               <p className='font-semibold'>{profile.phone}</p>
             </div>
           )}
           {profile.instagramHandle && (
             <div>
-              <p className='text-sm text-gray-600'>Instagram</p>
+              <p className='text-sm text-muted'>Instagram</p>
               <p className='font-semibold'>{profile.instagramHandle}</p>
             </div>
           )}
           <div>
-            <p className='text-sm text-gray-600'>Status</p>
+            <p className='text-sm text-muted'>Status</p>
             <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
               profile.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
             }`}>

@@ -110,7 +110,7 @@ const Banners = ({ token }) => {
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
         {/* Add Banner Form */}
-        <div className='bg-white border border-gray-200 rounded-lg shadow-sm p-6'>
+        <div className='glass border border-white/10 rounded-lg shadow-sm p-6'>
           <h2 className='text-xl font-bold mb-6'>Create New Banner</h2>
           <form onSubmit={onSubmitHandler} className='space-y-4'>
             <div>
@@ -119,7 +119,7 @@ const Banners = ({ token }) => {
                 type='file'
                 onChange={(e) => setImage(e.target.files[0])}
                 accept='image/*'
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
                 required
               />
               {image && (
@@ -132,7 +132,7 @@ const Banners = ({ token }) => {
                 type='text'
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
                 placeholder='Banner title'
                 required
               />
@@ -143,7 +143,7 @@ const Banners = ({ token }) => {
                 type='text'
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
                 placeholder='Banner subtitle'
               />
             </div>
@@ -153,7 +153,7 @@ const Banners = ({ token }) => {
                 type='text'
                 value={link}
                 onChange={(e) => setLink(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
                 placeholder='/collection?category=Men'
               />
             </div>
@@ -162,7 +162,7 @@ const Banners = ({ token }) => {
               <select
                 value={placement}
                 onChange={(e) => setPlacement(e.target.value)}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
+                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
               >
                 {placementOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -183,7 +183,7 @@ const Banners = ({ token }) => {
             </div>
             <button
               type='submit'
-              className='w-full bg-black text-white py-3 font-semibold rounded-lg hover:bg-gray-800 transition-colors'
+              className='w-full bg-accent-gradient text-brand-deep py-3 font-semibold rounded-lg hover:brightness-110 transition-colors'
             >
               Create Banner
             </button>
@@ -191,34 +191,34 @@ const Banners = ({ token }) => {
         </div>
 
         {/* Banners List */}
-        <div className='lg:col-span-2 bg-white border border-gray-200 rounded-lg shadow-sm p-6'>
+        <div className='lg:col-span-2 glass border border-white/10 rounded-lg shadow-sm p-6'>
           <h2 className='text-xl font-bold mb-6'>All Banners ({banners.length})</h2>
           <div className='grid grid-cols-1 gap-4'>
             {banners.length > 0 ? (
               banners.map((banner, index) => (
-                <div key={index} className='border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all'>
+                <div key={index} className='border border-white/10 rounded-lg overflow-hidden hover:shadow-md transition-all'>
                   <div className='flex flex-col md:flex-row'>
                     <img src={banner.image} alt={banner.title} className='w-full md:w-48 h-32 object-cover' />
                     <div className='flex-1 p-4'>
                       <div className='flex items-start justify-between mb-2'>
                         <div>
                           <h3 className='font-bold text-lg'>{banner.title}</h3>
-                          {banner.subtitle && <p className='text-sm text-gray-600'>{banner.subtitle}</p>}
-                          {banner.link && <p className='text-xs text-gray-500 mt-1'>Link: {banner.link}</p>}
+                          {banner.subtitle && <p className='text-sm text-muted'>{banner.subtitle}</p>}
+                          {banner.link && <p className='text-xs text-muted mt-1'>Link: {banner.link}</p>}
                           {banner.placement && (
                             <p className='text-xs text-blue-600 mt-1 font-medium'>
                               📍 {placementOptions.find(p => p.value === banner.placement)?.label || banner.placement}
                             </p>
                           )}
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${banner.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${banner.isActive ? 'bg-green-100 text-green-700' : 'bg-white/5 text-fg'}`}>
                           {banner.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </div>
                       <div className='flex gap-2 mt-3'>
                         <button
                           onClick={() => toggleStatus(banner._id, banner.isActive)}
-                          className='px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-sm'
+                          className='px-4 py-2 bg-white/5 text-fg rounded-lg font-semibold hover:bg-white/10 transition-colors text-sm'
                         >
                           {banner.isActive ? 'Deactivate' : 'Activate'}
                         </button>
@@ -234,7 +234,7 @@ const Banners = ({ token }) => {
                 </div>
               ))
             ) : (
-              <p className='text-center text-gray-500 py-8'>No banners yet. Create your first banner!</p>
+              <p className='text-center text-muted py-8'>No banners yet. Create your first banner!</p>
             )}
           </div>
         </div>

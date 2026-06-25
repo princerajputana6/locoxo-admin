@@ -17,6 +17,9 @@ import Analytics from './pages/Analytics'
 import Influencers from './pages/Influencers'
 import InfluencerDashboard from './pages/InfluencerDashboard'
 import Tickets from './pages/Tickets'
+import MembershipPlans from './pages/MembershipPlans'
+import Marketing from './pages/Marketing'
+import AIInsights from './pages/AIInsights'
 import Login from './components/Login'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -58,7 +61,7 @@ const App = () => {
   }
 
   return (
-    <div className='bg-white min-h-screen'>
+    <div className='bg-ink min-h-screen text-fg'>
       <ToastContainer position="top-right" autoClose={3000} />
       {token === ""
         ? <Login setToken={setToken} setUserRole={setUserRole} setUserData={setUserData} />
@@ -66,7 +69,7 @@ const App = () => {
           <Navbar setToken={handleLogout} userRole={userRole} userData={userData} />
           <div className='flex w-full'>
             {userRole === 'admin' && <Sidebar />}
-            <div className='flex-1 bg-gray-50'>
+            <div className='flex-1 bg-ink min-h-screen'>
               {userRole === 'admin' ? (
                 <Routes>
                   <Route path='/' element={<Dashboard token={token} />} />
@@ -82,6 +85,9 @@ const App = () => {
                   <Route path='/returns' element={<Returns token={token} />} />
                   <Route path='/influencers' element={<Influencers token={token} />} />
                   <Route path='/tickets' element={<Tickets token={token} />} />
+                  <Route path='/membership' element={<MembershipPlans token={token} />} />
+                  <Route path='/marketing' element={<Marketing token={token} />} />
+                  <Route path='/ai-insights' element={<AIInsights token={token} />} />
                   <Route path='/reports/sales' element={<SalesReport token={token} />} />
                   <Route path='/reports/analytics' element={<Analytics token={token} />} />
                   <Route path='*' element={<Navigate to='/' />} />

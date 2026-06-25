@@ -108,15 +108,15 @@ const List = ({ token }) => {
       <div className='flex items-center justify-between mb-8'>
         <div>
           <h1 className='text-3xl font-bold'>Products</h1>
-          <p className='text-sm text-gray-600 mt-1'>Manage your product inventory</p>
+          <p className='text-sm text-muted mt-1'>Manage your product inventory</p>
         </div>
         <div className='flex items-center gap-4'>
-          <div className='bg-gray-100 text-gray-700 px-6 py-3 font-semibold rounded-lg'>
+          <div className='bg-white/5 text-fg px-6 py-3 font-semibold rounded-lg'>
             {list.length} Products
           </div>
           <button 
             onClick={() => setShowAddForm(!showAddForm)}
-            className='bg-black text-white px-6 py-3 font-semibold rounded-lg shadow-md hover:bg-gray-800 transition-colors flex items-center gap-2'
+            className='bg-accent-gradient text-brand-deep px-6 py-3 font-semibold rounded-lg shadow-md hover:brightness-110 transition-colors flex items-center gap-2'
           >
             <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
@@ -127,16 +127,16 @@ const List = ({ token }) => {
       </div>
 
       {showAddForm && (
-        <div className='bg-white border border-gray-200 rounded-lg shadow-sm p-8 mb-8'>
+        <div className='glass border border-white/10 rounded-lg shadow-sm p-8 mb-8'>
           <h2 className='text-2xl font-bold mb-6'>Add New Product</h2>
           <form onSubmit={onSubmitHandler} className='flex flex-col w-full items-start gap-6'>
             <div className='w-full'>
               <p className='mb-4 font-bold text-sm uppercase tracking-wide'>Upload Images</p>
               <div className='flex gap-4'>
                 <label htmlFor="image1" className='cursor-pointer'>
-                  <div className='w-24 h-24 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center'>
+                  <div className='w-24 h-24 border-2 border-dashed border-white/10 hover:border-gray-400 rounded-lg hover:bg-white/5 transition-colors flex items-center justify-center'>
                     {!image1 ? (
-                      <svg className='w-8 h-8 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <svg className='w-8 h-8 text-faint' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
                       </svg>
                     ) : (
@@ -146,9 +146,9 @@ const List = ({ token }) => {
                   <input onChange={(e)=>setImage1(e.target.files[0])} type="file" id="image1" hidden/>
                 </label>
                 <label htmlFor="image2" className='cursor-pointer'>
-                  <div className='w-24 h-24 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center'>
+                  <div className='w-24 h-24 border-2 border-dashed border-white/10 hover:border-gray-400 rounded-lg hover:bg-white/5 transition-colors flex items-center justify-center'>
                     {!image2 ? (
-                      <svg className='w-8 h-8 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <svg className='w-8 h-8 text-faint' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
                       </svg>
                     ) : (
@@ -158,9 +158,9 @@ const List = ({ token }) => {
                   <input onChange={(e)=>setImage2(e.target.files[0])} type="file" id="image2" hidden/>
                 </label>
                 <label htmlFor="image3" className='cursor-pointer'>
-                  <div className='w-24 h-24 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center'>
+                  <div className='w-24 h-24 border-2 border-dashed border-white/10 hover:border-gray-400 rounded-lg hover:bg-white/5 transition-colors flex items-center justify-center'>
                     {!image3 ? (
-                      <svg className='w-8 h-8 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <svg className='w-8 h-8 text-faint' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
                       </svg>
                     ) : (
@@ -170,9 +170,9 @@ const List = ({ token }) => {
                   <input onChange={(e)=>setImage3(e.target.files[0])} type="file" id="image3" hidden/>
                 </label>
                 <label htmlFor="image4" className='cursor-pointer'>
-                  <div className='w-24 h-24 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center'>
+                  <div className='w-24 h-24 border-2 border-dashed border-white/10 hover:border-gray-400 rounded-lg hover:bg-white/5 transition-colors flex items-center justify-center'>
                     {!image4 ? (
-                      <svg className='w-8 h-8 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <svg className='w-8 h-8 text-faint' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
                       </svg>
                     ) : (
@@ -186,18 +186,18 @@ const List = ({ token }) => {
 
             <div className='w-full'>
               <p className='mb-2 font-bold text-sm uppercase tracking-wide'>Product Name</p>
-              <input onChange={(e)=>setName(e.target.value)} value={name} className='w-full max-w-[500px] px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all' type="text" placeholder='Enter product name' required/>
+              <input onChange={(e)=>setName(e.target.value)} value={name} className='w-full max-w-[500px] px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all' type="text" placeholder='Enter product name' required/>
             </div>
 
             <div className='w-full'>
               <p className='mb-2 font-bold text-sm uppercase tracking-wide'>Product Description</p>
-              <textarea onChange={(e)=>setDescription(e.target.value)} value={description} className='w-full max-w-[500px] px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none h-32 transition-all' type="text" placeholder='Enter product description' required/>
+              <textarea onChange={(e)=>setDescription(e.target.value)} value={description} className='w-full max-w-[500px] px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none h-32 transition-all' type="text" placeholder='Enter product description' required/>
             </div>
 
             <div className='flex flex-col sm:flex-row gap-6 w-full'>
               <div className='flex-1'>
                 <p className='mb-2 font-bold text-sm uppercase tracking-wide'>Category</p>
-                <select onChange={(e) => setCategory(e.target.value)} className='w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'>
+                <select onChange={(e) => setCategory(e.target.value)} className='w-full px-4 py-3 border border-white/10 rounded-lg glass focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'>
                   <option value="Men">Men</option>
                   <option value="Women">Women</option>
                   <option value="Kids">Kids</option>
@@ -208,7 +208,7 @@ const List = ({ token }) => {
 
               <div className='flex-1'>
                 <p className='mb-2 font-bold text-sm uppercase tracking-wide'>Sub Category</p>
-                <select onChange={(e) => setSubCategory(e.target.value)} className='w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'>
+                <select onChange={(e) => setSubCategory(e.target.value)} className='w-full px-4 py-3 border border-white/10 rounded-lg glass focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'>
                   <option value="Topwear">Topwear</option>
                   <option value="Bottomwear">Bottomwear</option>
                   <option value="Winterwear">Winterwear</option>
@@ -217,7 +217,7 @@ const List = ({ token }) => {
 
               <div className='flex-1'>
                 <p className='mb-2 font-bold text-sm uppercase tracking-wide'>Price ($)</p>
-                <input onChange={(e) => setPrice(e.target.value)} value={price} className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all' type="Number" placeholder='25' required/>
+                <input onChange={(e) => setPrice(e.target.value)} value={price} className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all' type="Number" placeholder='25' required/>
               </div>
             </div>
 
@@ -225,19 +225,19 @@ const List = ({ token }) => {
               <p className='mb-3 font-bold text-sm uppercase tracking-wide'>Available Sizes</p>
               <div className='flex gap-3'>
                 <div onClick={()=>setSizes(prev => prev.includes("S") ? prev.filter( item => item !== "S") : [...prev,"S"])}>
-                  <p className={`${sizes.includes("S") ? "bg-black text-white" : "bg-white border border-gray-300" } px-4 py-2 rounded-lg cursor-pointer font-semibold hover:bg-gray-100 transition-colors`}>S</p>
+                  <p className={`${sizes.includes("S") ? "bg-accent-gradient text-brand-deep" : "glass border border-white/10" } px-4 py-2 rounded-lg cursor-pointer font-semibold hover:bg-white/10 transition-colors`}>S</p>
                 </div>
                 <div onClick={()=>setSizes(prev => prev.includes("M") ? prev.filter( item => item !== "M") : [...prev,"M"])}>
-                  <p className={`${sizes.includes("M") ? "bg-black text-white" : "bg-white border border-gray-300" } px-4 py-2 rounded-lg cursor-pointer font-semibold hover:bg-gray-100 transition-colors`}>M</p>
+                  <p className={`${sizes.includes("M") ? "bg-accent-gradient text-brand-deep" : "glass border border-white/10" } px-4 py-2 rounded-lg cursor-pointer font-semibold hover:bg-white/10 transition-colors`}>M</p>
                 </div>
                 <div onClick={()=>setSizes(prev => prev.includes("L") ? prev.filter( item => item !== "L") : [...prev,"L"])}>
-                  <p className={`${sizes.includes("L") ? "bg-black text-white" : "bg-white border border-gray-300" } px-4 py-2 rounded-lg cursor-pointer font-semibold hover:bg-gray-100 transition-colors`}>L</p>
+                  <p className={`${sizes.includes("L") ? "bg-accent-gradient text-brand-deep" : "glass border border-white/10" } px-4 py-2 rounded-lg cursor-pointer font-semibold hover:bg-white/10 transition-colors`}>L</p>
                 </div>
                 <div onClick={()=>setSizes(prev => prev.includes("XL") ? prev.filter( item => item !== "XL") : [...prev,"XL"])}>
-                  <p className={`${sizes.includes("XL") ? "bg-black text-white" : "bg-white border border-gray-300" } px-4 py-2 rounded-lg cursor-pointer font-semibold hover:bg-gray-100 transition-colors`}>XL</p>
+                  <p className={`${sizes.includes("XL") ? "bg-accent-gradient text-brand-deep" : "glass border border-white/10" } px-4 py-2 rounded-lg cursor-pointer font-semibold hover:bg-white/10 transition-colors`}>XL</p>
                 </div>
                 <div onClick={()=>setSizes(prev => prev.includes("XXL") ? prev.filter( item => item !== "XXL") : [...prev,"XXL"])}>
-                  <p className={`${sizes.includes("XXL") ? "bg-black text-white" : "bg-white border border-gray-300" } px-4 py-2 rounded-lg cursor-pointer font-semibold hover:bg-gray-100 transition-colors`}>XXL</p>
+                  <p className={`${sizes.includes("XXL") ? "bg-accent-gradient text-brand-deep" : "glass border border-white/10" } px-4 py-2 rounded-lg cursor-pointer font-semibold hover:bg-white/10 transition-colors`}>XXL</p>
                 </div>
               </div>
             </div>
@@ -247,16 +247,16 @@ const List = ({ token }) => {
               <label className='cursor-pointer font-semibold' htmlFor="bestseller">Add to Bestseller</label>
             </div>
 
-            <button type="submit" className='px-8 py-3 mt-4 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors shadow-md'>Add Product</button>
+            <button type="submit" className='px-8 py-3 mt-4 bg-accent-gradient text-brand-deep font-semibold rounded-lg hover:brightness-110 transition-colors shadow-md'>Add Product</button>
           </form>
         </div>
       )}
 
-      <div className='bg-white border border-gray-200 rounded-lg shadow-sm p-6'>
+      <div className='glass border border-white/10 rounded-lg shadow-sm p-6'>
 
         <div className='flex flex-col gap-3'>
           {/* ------- List Table Title ---------- */}
-          <div className='hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center py-3 px-4 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg'>
+          <div className='hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center py-3 px-4 bg-white/5 text-fg text-sm font-semibold rounded-lg'>
             <span>Image</span>
             <span>Product Name</span>
             <span>Category</span>
@@ -267,10 +267,10 @@ const List = ({ token }) => {
           {/* ------ Product List ------ */}
           {
             list.map((item, index) => (
-              <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center gap-4 py-4 px-4 border border-gray-200 rounded-lg hover:shadow-md text-sm transition-all bg-white' key={index}>
+              <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center gap-4 py-4 px-4 border border-white/10 rounded-lg hover:shadow-md text-sm transition-all glass' key={index}>
                 <img className='w-14 h-14 object-cover rounded-lg' src={item.image[0]} alt="" />
                 <p className='font-semibold'>{item.name}</p>
-                <span className='px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full w-fit'>{item.category?.name || item.category}</span>
+                <span className='px-3 py-1 bg-white/5 text-fg text-xs font-semibold rounded-full w-fit'>{item.category?.name || item.category}</span>
                 <p className='font-bold'>{currency}{item.price}</p>
                 <button onClick={() => removeProduct(item._id)} className='text-right md:text-center cursor-pointer bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors text-xs'>DELETE</button>
               </div>

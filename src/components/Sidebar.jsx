@@ -1,114 +1,120 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { assets } from '../assets/assets'
+import {
+  LayoutDashboard, Package, Tag, ShoppingCart, Users, Boxes,
+  TicketPercent, Image, RotateCcw, Megaphone, Crown, Sparkles,
+  BarChart3, TrendingUp, LifeBuoy, ChevronLeft,
+} from 'lucide-react'
+
+const groups = [
+  {
+    label: null,
+    items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true }],
+  },
+  {
+    label: 'Management',
+    items: [
+      { to: '/products', label: 'Products', icon: Package },
+      { to: '/categories', label: 'Categories', icon: Tag },
+      { to: '/orders', label: 'Orders', icon: ShoppingCart },
+      { to: '/customers', label: 'Customers', icon: Users },
+      { to: '/inventory', label: 'Inventory', icon: Boxes, accent: true },
+      { to: '/coupons', label: 'Coupons', icon: TicketPercent },
+      { to: '/banners', label: 'Banners', icon: Image },
+      { to: '/returns', label: 'Returns', icon: RotateCcw },
+      { to: '/influencers', label: 'Influencers', icon: TrendingUp },
+      { to: '/tickets', label: 'Tickets', icon: LifeBuoy },
+    ],
+  },
+  {
+    label: 'Growth',
+    items: [
+      { to: '/marketing', label: 'Marketing', icon: Megaphone },
+      { to: '/membership', label: 'Membership', icon: Crown },
+      { to: '/ai-insights', label: 'AI Insights', icon: Sparkles },
+    ],
+  },
+  {
+    label: 'Reports',
+    items: [
+      { to: '/reports/sales', label: 'Sales', icon: BarChart3 },
+      { to: '/reports/analytics', label: 'Analytics', icon: TrendingUp },
+    ],
+  },
+]
 
 const Sidebar = () => {
+  const [collapsed, setCollapsed] = useState(false)
+
   return (
-    <div className='w-[18%] min-h-screen bg-white border-r border-gray-200 shadow-sm'>
-        <div className='flex flex-col gap-1 pt-6 px-3 text-sm'>
-            {/* Dashboard */}
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100 hover:shadow-sm'}`} to="/">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' />
-                </svg>
-                <p className='hidden md:block text-xs'>Dashboard</p>
-            </NavLink>
-
-            {/* Management Section */}
-            <div className='mt-6 mb-2 px-4'>
-              <p className='text-xs font-bold text-gray-500 uppercase tracking-wider'>Management</p>
-            </div>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/products">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' />
-                </svg>
-                <p className='hidden md:block text-xs'>Products</p>
-            </NavLink>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/categories">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' />
-                </svg>
-                <p className='hidden md:block text-xs'>Categories</p>
-            </NavLink>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/orders">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' />
-                </svg>
-                <p className='hidden md:block text-xs'>Orders</p>
-            </NavLink>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/customers">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' />
-                </svg>
-                <p className='hidden md:block text-xs'>Customers</p>
-            </NavLink>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/inventory">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' />
-                </svg>
-                <p className='hidden md:block text-xs'>Inventory</p>
-            </NavLink>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/coupons">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' />
-                </svg>
-                <p className='hidden md:block text-xs'>Coupons</p>
-            </NavLink>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/banners">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
-                </svg>
-                <p className='hidden md:block text-xs'>Banners</p>
-            </NavLink>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/returns">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6' />
-                </svg>
-                <p className='hidden md:block text-xs'>Returns</p>
-            </NavLink>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/influencers">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' />
-                </svg>
-                <p className='hidden md:block text-xs'>Influencers</p>
-            </NavLink>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/tickets">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' />
-                </svg>
-                <p className='hidden md:block text-xs'>Tickets</p>
-            </NavLink>
-
-            {/* Reports Section */}
-            <div className='mt-6 mb-2 px-4'>
-              <p className='text-xs font-bold text-gray-500 uppercase tracking-wider'>Reports</p>
-            </div>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/reports/sales">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
-                </svg>
-                <p className='hidden md:block text-xs'>Sales</p>
-            </NavLink>
-
-            <NavLink className={({isActive}) => `flex items-center gap-3 px-4 py-3 font-medium transition-all rounded-lg ${isActive ? 'bg-black text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`} to="/reports/analytics">
-                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
-                </svg>
-                <p className='hidden md:block text-xs'>Analytics</p>
-            </NavLink>
+    <aside className={`hidden md:flex flex-col shrink-0 ${collapsed ? 'w-[72px]' : 'w-[230px]'} min-h-screen bg-surface border-r border-line transition-[width] duration-300 sticky top-0 h-screen`}>
+      {/* Logo header */}
+      <div className='flex items-center gap-2.5 px-4 h-16 border-b border-line/70 shrink-0'>
+        <div className='grid place-items-center w-9 h-9 rounded-xl bg-accent-gradient shadow-glow shrink-0'>
+          <span className='font-heading font-black text-brand-deep text-sm'>LX</span>
         </div>
-    </div>
+        {!collapsed && (
+          <div className='min-w-0 animate-fade-in'>
+            <p className='font-heading font-extrabold text-fg leading-none'>LOCOXO</p>
+            <p className='text-[10px] text-faint uppercase tracking-widest'>Admin</p>
+          </div>
+        )}
+        <button
+          onClick={() => setCollapsed((c) => !c)}
+          className={`ml-auto grid place-items-center w-7 h-7 rounded-lg text-faint hover:text-fg hover:bg-surface-2 transition-all ${collapsed ? 'rotate-180' : ''}`}
+        >
+          <ChevronLeft size={16} />
+        </button>
+      </div>
+
+      {/* Nav */}
+      <nav className='flex-1 overflow-y-auto py-4 px-2.5 space-y-1'>
+        {groups.map((g, gi) => (
+          <div key={gi} className={gi > 0 ? 'pt-4' : ''}>
+            {g.label && !collapsed && (
+              <p className='px-3 mb-1.5 text-[10px] font-bold text-faint uppercase tracking-widest'>{g.label}</p>
+            )}
+            <div className='space-y-1'>
+              {g.items.map((it) => (
+                <NavLink
+                  key={it.to}
+                  to={it.to}
+                  end={it.end}
+                  title={it.label}
+                  className={({ isActive }) =>
+                    `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-[13px] transition-all duration-200 ${
+                      isActive
+                        ? 'bg-accent/10 text-accent'
+                        : 'text-muted hover:text-fg hover:bg-surface-2'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <span className='absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-accent-gradient animate-scale-in' />
+                      )}
+                      <it.icon size={18} className={`shrink-0 ${isActive ? 'text-accent' : 'text-faint group-hover:text-fg'} transition-colors`} />
+                      {!collapsed && <span className='truncate'>{it.label}</span>}
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {!collapsed && (
+        <div className='p-3 shrink-0'>
+          <div className='rounded-xl bg-brand-gradient p-3 text-white text-xs'>
+            <p className='font-semibold flex items-center gap-1.5'><Sparkles size={13} className='text-glow' /> Pro tip</p>
+            <p className='text-white/70 mt-1 leading-snug'>Use Inventory → Bulk Add to create products and auto-generate barcodes in one go.</p>
+          </div>
+        </div>
+      )}
+    </aside>
   )
 }
 
