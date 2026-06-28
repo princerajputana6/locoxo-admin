@@ -125,6 +125,21 @@ const Inventory = ({ token }) => {
   const removeFromQueue = (idx) => setLabelQueue((q) => q.filter((_, i) => i !== idx))
   const printLabels = () => { if (labelQueue.length > 0) window.print() }
 
+  // Labeled barcode image (barcode + product details baked in)
+  const labelUrl = (p, v) => backendUrl + '/api/inventory/label/' + encodeURIComponent(v.sku) + '?' +
+    new URLSearchParams({ name: p.name || '', price: p.price ?? '', size: v.size || '', color: v.color || '', stock: v.stock ?? '' }).toString()
+
+  const downloadLabel = async (p, v) => {
+    try {
+      const res = await fetch(labelUrl(p, v))
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = `${v.sku}.svg`; a.click()
+      URL.revokeObjectURL(url)
+    } catch { toast.error('Download failed') }
+  }
+
   return (
     <div className='p-6'>
       <PageHeader
@@ -315,9 +330,9 @@ const Inventory = ({ token }) => {
                               <p className='font-mono text-xs text-muted'>{v.sku || '—'}</p>
                               {v.sku && (
                                 <img
-                                  src={backendUrl + '/api/inventory/barcode/' + encodeURIComponent(v.sku)}
+                                  src={labelUrl(p, v)}
                                   alt={v.sku}
-                                  className='h-8 mt-1 rounded bg-white px-1'
+                                  className='h-20 mt-1 rounded-lg bg-white shadow'
                                 />
                               )}
                             </td>
@@ -327,13 +342,22 @@ const Inventory = ({ token }) => {
                               </span>
                             </td>
                             <td className='py-2 text-right'>
-                              <button
-                                onClick={() => queueLabel(p, v)}
-                                disabled={!v.sku}
-                                className='text-[10px] uppercase tracking-widest font-semibold border border-line rounded-lg px-2.5 py-1 text-muted hover:text-accent hover:border-accent/50 disabled:opacity-30 transition-all'
-                              >
-                                Queue Label
-                              </button>
+                              <div className='inline-flex flex-col gap-1 items-end'>
+                                <button
+                                  onClick={() => downloadLabel(p, v)}
+                                  disabled={!v.sku}
+                                  className='text-[10px] uppercase tracking-widest font-semibold bg-accent/15 text-accent border border-accent/30 rounded-lg px-2.5 py-1 hover:bg-accent/25 disabled:opacity-30 transition-all'
+                                >
+                                  Download
+                                </button>
+                                <button
+                                  onClick={() => queueLabel(p, v)}
+                                  disabled={!v.sku}
+                                  className='text-[10px] uppercase tracking-widest font-semibold border border-line rounded-lg px-2.5 py-1 text-muted hover:text-accent hover:border-accent/50 disabled:opacity-30 transition-all'
+                                >
+                                  Queue
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
