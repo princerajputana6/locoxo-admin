@@ -20,6 +20,7 @@ import Tickets from './pages/Tickets'
 import MembershipPlans from './pages/MembershipPlans'
 import Marketing from './pages/Marketing'
 import AIInsights from './pages/AIInsights'
+import Calculator from './pages/Calculator'
 import Login from './components/Login'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -88,6 +89,7 @@ const App = () => {
                   <Route path='/membership' element={<MembershipPlans token={token} />} />
                   <Route path='/marketing' element={<Marketing token={token} />} />
                   <Route path='/ai-insights' element={<AIInsights token={token} />} />
+                  <Route path='/calculator' element={<Calculator token={token} />} />
                   <Route path='/reports/sales' element={<SalesReport token={token} />} />
                   <Route path='/reports/analytics' element={<Analytics token={token} />} />
                   <Route path='*' element={<Navigate to='/' />} />

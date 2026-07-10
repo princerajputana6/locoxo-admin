@@ -4,7 +4,7 @@ import { assets } from '../assets/assets'
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Users, Boxes,
   TicketPercent, Image, RotateCcw, Megaphone, Crown, Sparkles,
-  BarChart3, TrendingUp, LifeBuoy, ChevronLeft,
+  BarChart3, TrendingUp, LifeBuoy, ChevronLeft, Calculator,
 } from 'lucide-react'
 
 const groups = [
@@ -20,6 +20,7 @@ const groups = [
       { to: '/orders', label: 'Orders', icon: ShoppingCart },
       { to: '/customers', label: 'Customers', icon: Users },
       { to: '/inventory', label: 'Inventory', icon: Boxes, accent: true },
+      { to: '/calculator', label: 'Calculator', icon: Calculator },
       { to: '/coupons', label: 'Coupons', icon: TicketPercent },
       { to: '/banners', label: 'Banners', icon: Image },
       { to: '/returns', label: 'Returns', icon: RotateCcw },
