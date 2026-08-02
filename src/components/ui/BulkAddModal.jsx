@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import axios from 'axios'
 import { toast } from 'react-toastify'
-import { Plus, Trash2, PackagePlus, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { Plus, Trash2, PackagePlus, CheckCircle2, AlertCircle, Loader2, ImagePlus, X } from 'lucide-react'
 import { Modal, Btn } from './index.js'
 import { backendUrl } from '../../App'
 
-const blankRow = { name: '', price: '', category: 'Men', size: 'M', color: 'Default', stock: '0' }
+const blankRow = { name: '', price: '', category: 'Men', size: 'M', color: 'Default', stock: '0', image: null, preview: '' }
 
 const BulkAddModal = ({ open, onClose, token, onDone }) => {
   const [rows, setRows] = useState([{ ...blankRow }])
@@ -14,6 +14,14 @@ const BulkAddModal = ({ open, onClose, token, onDone }) => {
 
   const update = (i, field, value) =>
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [field]: value } : row)))
+
+  const setImage = (i, file) => {
+    setRows((r) => r.map((row, idx) => {
+      if (idx !== i) return row
+      if (row.preview) URL.revokeObjectURL(row.preview)
+      return { ...row, image: file || null, preview: file ? URL.createObjectURL(file) : '' }
+    }))
+  }
 
   const addRow = () => setRows((r) => [...r, { ...blankRow }])
   const removeRow = (i) => setRows((r) => r.filter((_, idx) => idx !== i))
@@ -24,27 +32,36 @@ const BulkAddModal = ({ open, onClose, token, onDone }) => {
 
   const submit = async () => {
     // Build variants for each row. A row becomes one product with one variant.
-    const products = rows
+    // Keep the file alongside so we can align image_<index> with the products array.
+    const items = rows
       .map((r) => ({
-        name: r.name.trim(),
-        price: r.price,
-        category: r.category,
-        brand: 'LOCOXO',
-        variants: [{ size: r.size || 'Free', color: r.color || 'Default', stock: Number(r.stock) || 0 }],
+        product: {
+          name: r.name.trim(),
+          price: r.price,
+          category: r.category,
+          brand: 'LOCOXO',
+          variants: [{ size: r.size || 'Free', color: r.color || 'Default', stock: Number(r.stock) || 0 }],
+        },
+        file: r.image,
       }))
-      .filter((p) => p.name && p.price !== '')
+      .filter((x) => x.product.name && x.product.price !== '')
 
-    if (products.length === 0) {
+    if (items.length === 0) {
       toast.error('Add at least one product with a name and price')
       return
     }
+
+    // Multipart: products JSON + optional per-row image files (image_<index>).
+    const fd = new FormData()
+    fd.append('products', JSON.stringify(items.map((x) => x.product)))
+    items.forEach((x, idx) => { if (x.file) fd.append(`image_${idx}`, x.file) })
 
     setBusy(true)
     setResult(null)
     try {
       const { data } = await axios.post(
         backendUrl + '/api/inventory/bulk-add',
-        { products },
+        fd,
         { headers: { token } }
       )
       if (data.success) {
@@ -90,15 +107,14 @@ const BulkAddModal = ({ open, onClose, token, onDone }) => {
       ) : (
         <div className='space-y-4'>
           {/* column hints */}
-          <div className='hidden md:grid grid-cols-[1.6fr_0.7fr_0.9fr_0.6fr_0.9fr_0.6fr_36px] gap-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-faint'>
-            <span>Product name *</span><span>Price ₹ *</span><span>Category</span><span>Size</span><span>Color</span><span>Stock</span><span />
-          </div>
+          <div className='hidden md:grid grid-cols-[1.6fr_0.7fr_0.9fr_0.6fr_0.9fr_0.6fr_44px_36px] gap-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-faint'>
+            <span>Product name *</span><span>Price ₹ *</span><span>Category</span><span>Size</span><span>Color</span><span>Stock</span><span>Image</span><span /></div>
 
           <div className='space-y-2 max-h-[46vh] overflow-y-auto pr-1'>
             {rows.map((r, i) => (
               <div
                 key={i}
-                className='grid grid-cols-1 md:grid-cols-[1.6fr_0.7fr_0.9fr_0.6fr_0.9fr_0.6fr_36px] gap-2 items-center animate-fade-in'
+                className='grid grid-cols-1 md:grid-cols-[1.6fr_0.7fr_0.9fr_0.6fr_0.9fr_0.6fr_44px_36px] gap-2 items-center animate-fade-in'
               >
                 <input
                   value={r.name}
@@ -140,6 +156,34 @@ const BulkAddModal = ({ open, onClose, token, onDone }) => {
                   placeholder='0'
                   className='px-3 py-2 text-sm rounded-lg bg-surface-2 border border-line text-fg focus:border-accent focus:ring-2 focus:ring-accent/15 outline-none'
                 />
+                {/* Image picker (optional) */}
+                <div className='relative w-11 h-11 shrink-0'>
+                  <label
+                    title={r.image ? 'Change image' : 'Add image (optional)'}
+                    className='grid place-items-center w-11 h-11 rounded-lg border border-line bg-surface-2 text-faint hover:text-accent hover:border-accent/50 cursor-pointer overflow-hidden transition-colors'
+                  >
+                    {r.preview
+                      ? <img src={r.preview} alt='' className='w-full h-full object-cover' />
+                      : <ImagePlus size={15} />}
+                    <input
+                      type='file'
+                      accept='image/*'
+                      className='hidden'
+                      onChange={(e) => setImage(i, e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  {r.image && (
+                    <button
+                      type='button'
+                      onClick={() => setImage(i, null)}
+                      title='Remove image'
+                      className='absolute -top-1.5 -right-1.5 grid place-items-center w-4 h-4 rounded-full bg-danger text-white shadow'
+                    >
+                      <X size={10} />
+                    </button>
+                  )}
+                </div>
+
                 <button
                   onClick={() => removeRow(i)}
                   disabled={rows.length === 1}
@@ -155,7 +199,7 @@ const BulkAddModal = ({ open, onClose, token, onDone }) => {
           <Btn variant='secondary' size='sm' icon={Plus} onClick={addRow}>Add row</Btn>
 
           <p className='text-[11px] text-faint'>
-            Tip: each row creates one product with one variant. The server auto-assigns a unique SKU and Code-128 barcode to every variant.
+            Tip: each row creates one product with one variant. Add an image per row if you like (optional — a placeholder is used otherwise). The server auto-assigns a unique SKU and Code-128 barcode to every variant.
           </p>
         </div>
       )}
