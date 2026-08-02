@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import axios from 'axios'
 import { toast } from 'react-toastify'
-import { Plus, Trash2, PackagePlus, CheckCircle2, AlertCircle, Loader2, ImagePlus, X } from 'lucide-react'
+import { Plus, Trash2, PackagePlus, CheckCircle2, AlertCircle, ImagePlus, X } from 'lucide-react'
 import { Modal, Btn } from './index.js'
 import { backendUrl } from '../../App'
 
@@ -93,7 +93,7 @@ const BulkAddModal = ({ open, onClose, token, onDone }) => {
           <span className='text-xs text-muted mr-auto'>{validCount} valid row(s)</span>
           <Btn variant='ghost' size='sm' onClick={close}>Close</Btn>
           {!result ? (
-            <Btn variant='primary' size='sm' icon={busy ? Loader2 : Plus} onClick={submit} disabled={busy || validCount === 0}>
+            <Btn variant='primary' size='sm' icon={Plus} loading={busy} onClick={submit} disabled={validCount === 0}>
               {busy ? 'Creating…' : `Create ${validCount || ''} product(s)`}
             </Btn>
           ) : (

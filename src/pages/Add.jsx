@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { backendUrl, currency } from '../App'
 import { toast } from 'react-toastify'
-import { PackagePlus, ImagePlus, Plus, Trash2, X, Barcode, Loader2 } from 'lucide-react'
+import { PackagePlus, ImagePlus, Plus, Trash2, X, Barcode } from 'lucide-react'
 import { PageHeader, Btn, Toggle } from '../components/ui'
 
 const SIZE_OPTIONS = ['Free', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '28', '30', '32', '34', '36', '38']
@@ -156,7 +156,7 @@ const Add = ({ token }) => {
         </div>
 
         <div className='flex items-center gap-3'>
-          <Btn variant='primary' size='md' icon={busy ? Loader2 : PackagePlus} type='submit' disabled={busy}>{busy ? 'Adding…' : 'Add Product'}</Btn>
+          <Btn variant='primary' size='md' icon={PackagePlus} loading={busy} type='submit'>{busy ? 'Adding…' : 'Add Product'}</Btn>
           <span className='text-[11px] text-faint'>Many products? Use <span className='text-accent font-semibold'>Inventory → Bulk Add</span>.</span>
         </div>
       </form>
