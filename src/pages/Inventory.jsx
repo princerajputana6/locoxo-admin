@@ -129,13 +129,18 @@ const Inventory = ({ token }) => {
   const labelUrl = (p, v) => backendUrl + '/api/inventory/label/' + encodeURIComponent(v.sku) + '?' +
     new URLSearchParams({ name: p.name || '', price: p.price ?? '', size: v.size || '', color: v.color || '', stock: v.stock ?? '' }).toString()
 
+  // Printable PDF label endpoint (opens/prints correctly everywhere)
+  const labelPdfUrl = (p, v) => backendUrl + '/api/inventory/label-pdf/' + encodeURIComponent(v.sku) + '?' +
+    new URLSearchParams({ name: p.name || '', price: p.price ?? '', size: v.size || '', color: v.color || '', stock: v.stock ?? '' }).toString()
+
   const downloadLabel = async (p, v) => {
     try {
-      const res = await fetch(labelUrl(p, v))
+      const res = await fetch(labelPdfUrl(p, v))
+      if (!res.ok) throw new Error('bad response')
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url; a.download = `${v.sku}.svg`; a.click()
+      a.href = url; a.download = `${v.sku}.pdf`; a.click()
       URL.revokeObjectURL(url)
     } catch { toast.error('Download failed') }
   }
