@@ -6,6 +6,7 @@ import { Modal, Btn } from './index.js'
 import { backendUrl } from '../../App'
 
 const blankRow = { name: '', price: '', category: 'Men', size: 'M', color: 'Default', stock: '0', image: null, preview: '' }
+const MAX_IMAGE_MB = 5 // keep in sync with backend middleware/multer.js
 
 const BulkAddModal = ({ open, onClose, token, onDone }) => {
   const [rows, setRows] = useState([{ ...blankRow }])
@@ -16,6 +17,10 @@ const BulkAddModal = ({ open, onClose, token, onDone }) => {
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [field]: value } : row)))
 
   const setImage = (i, file) => {
+    if (file) {
+      if (!file.type.startsWith('image/')) return toast.error('Only image files are allowed')
+      if (file.size > MAX_IMAGE_MB * 1024 * 1024) return toast.error(`Image must be under ${MAX_IMAGE_MB}MB`)
+    }
     setRows((r) => r.map((row, idx) => {
       if (idx !== i) return row
       if (row.preview) URL.revokeObjectURL(row.preview)

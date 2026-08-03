@@ -7,6 +7,7 @@ import { PageHeader, Btn, Toggle } from '../components/ui'
 
 const SIZE_OPTIONS = ['Free', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '28', '30', '32', '34', '36', '38']
 const MAX_IMAGES = 5
+const MAX_IMAGE_MB = 5 // keep in sync with backend middleware/multer.js
 const blankVariant = () => ({ size: 'M', color: 'Black', colorCode: '#000000', stock: 0 })
 const inp = 'w-full px-3 py-2 text-sm rounded-lg bg-surface-2 border border-line text-fg placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent/15 outline-none transition-all'
 const lbl = 'block text-[10px] font-semibold uppercase tracking-wider text-faint mb-1'
@@ -38,8 +39,14 @@ const Add = ({ token }) => {
   }, [])
 
   const onPickImages = (e) => {
-    const files = [...e.target.files]
-    setImages(prev => [...prev, ...files].slice(0, MAX_IMAGES))
+    const picked = [...e.target.files]
+    const valid = []
+    for (const f of picked) {
+      if (!f.type.startsWith('image/')) { toast.error(`${f.name}: only image files are allowed`); continue }
+      if (f.size > MAX_IMAGE_MB * 1024 * 1024) { toast.error(`${f.name}: image must be under ${MAX_IMAGE_MB}MB`); continue }
+      valid.push(f)
+    }
+    if (valid.length) setImages(prev => [...prev, ...valid].slice(0, MAX_IMAGES))
     e.target.value = ''
   }
   const removeImage = (i) => setImages(prev => prev.filter((_, idx) => idx !== i))
