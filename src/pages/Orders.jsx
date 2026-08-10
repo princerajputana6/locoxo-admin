@@ -1,346 +1,277 @@
-import React from 'react'
-import { useEffect, useCallback } from 'react'
-import { useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { backendUrl, currency } from '../App'
 import { toast } from 'react-toastify'
-import { assets } from '../assets/assets'
+import {
+  ShoppingCart, Search, RefreshCw, ClipboardList, FileSpreadsheet, BarChart3,
+  Download, Truck, StickyNote, ChevronDown, CreditCard,
+} from 'lucide-react'
+import {
+  PageHeader, Btn, FilterTabs, EmptyState, StatusPill, Modal, ManualOrderModal,
+} from '../components/ui'
 import { useAdminOrderStream } from '../hooks/useOrderRealtime'
 
+const WORKFLOW = ['Pending', 'Confirmed', 'Packed', 'Pickuped', 'Delivered', 'Cancelled', 'Returned']
+const FILTERS = ['All', ...WORKFLOW]
+
 const Orders = ({ token }) => {
-
   const [orders, setOrders] = useState([])
-  const [filteredOrders, setFilteredOrders] = useState([])
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [downloadingAll, setDownloadingAll] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [status, setStatus] = useState('All')
+  const [search, setSearch] = useState('')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [expanded, setExpanded] = useState({})
+  const [showManual, setShowManual] = useState(false)
+  const [showReport, setShowReport] = useState(false)
+  const [report, setReport] = useState([])
+  const [reportPeriod, setReportPeriod] = useState('daily')
+  const [noteDraft, setNoteDraft] = useState({})
 
-  const fetchAllOrders = async () => {
-
-    if (!token) {
-      return null;
-    }
-
+  const fetchOrders = async () => {
+    if (!token) return
+    setLoading(true)
     try {
+      const { data } = await axios.post(backendUrl + '/api/order/list',
+        { status, search, from, to }, { headers: { token } })
+      if (data.success) setOrders(data.orders)
+      else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed to load orders') }
+    finally { setLoading(false) }
+  }
+  useEffect(() => { fetchOrders() }, [status, from, to])
+  const onStream = useCallback(() => fetchOrders(), [status, from, to, search])
+  useAdminOrderStream(onStream)
 
-      const response = await axios.post(backendUrl + '/api/order/list', {}, { headers: { token } })
-      if (response.data.success) {
-        const reversedOrders = response.data.orders.reverse()
-        setOrders(reversedOrders)
-        setFilteredOrders(reversedOrders)
-      } else {
-        toast.error(response.data.message)
-      }
+  const shown = useMemo(() => {
+    const s = search.trim().toLowerCase()
+    if (!s) return orders
+    return orders.filter((o) => `${o.orderNumber} ${o.customerId || ''} ${o.address?.name || ''}`.toLowerCase().includes(s))
+  }, [orders, search])
 
-    } catch (error) {
-      toast.error(error.message)
-    }
+  const counts = useMemo(() => {
+    const c = { All: orders.length }
+    WORKFLOW.forEach((w) => { c[w] = orders.filter((o) => o.status === w).length })
+    return c
+  }, [orders])
 
-
+  const changeStatus = async (orderId, newStatus) => {
+    try {
+      const { data } = await axios.post(backendUrl + '/api/order/status', { orderId, status: newStatus }, { headers: { token } })
+      if (data.success) { toast.success(data.message); fetchOrders() }
+      else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed') }
   }
 
-  const createShipment = async (orderId) => {
+  const addNote = async (orderId) => {
+    const note = (noteDraft[orderId] || '').trim()
+    if (!note) return
     try {
-      const { data } = await axios.post(backendUrl + '/api/shipment/admin/create', { orderId }, { headers: { token } })
-      if (data.success) {
-        toast.success('Shipment created · AWB ' + data.shipment.awb)
-        await fetchAllOrders()
-      } else toast.error(data.message)
-    } catch (err) { toast.error(err.response?.data?.message || 'Failed to create shipment') }
+      const { data } = await axios.post(backendUrl + '/api/order/note', { orderId, note }, { headers: { token } })
+      if (data.success) { toast.success('Note added'); setNoteDraft((d) => ({ ...d, [orderId]: '' })); fetchOrders() }
+    } catch { toast.error('Failed to add note') }
   }
 
-  const pushEvent = async (shipmentId, status) => {
+  const saveDelivery = async (orderId, d) => {
     try {
-      const { data } = await axios.post(backendUrl + '/api/shipment/admin/' + shipmentId + '/event', {
-        status, description: `Marked ${status.replace(/_/g, ' ')} by admin`
-      }, { headers: { token } })
-      if (data.success) {
-        toast.success('Status pushed')
-        await fetchAllOrders()
-      }
-    } catch { toast.error('Failed') }
-  }
-
-  // Live updates from server
-  const handleStream = useCallback(() => {
-    fetchAllOrders()
-  }, [])
-  useAdminOrderStream(handleStream)
-
-  const statusHandler = async ( event, orderId ) => {
-    try {
-      const response = await axios.post(backendUrl + '/api/order/status' , {orderId, status:event.target.value}, { headers: {token}})
-      if (response.data.success) {
-        await fetchAllOrders()
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(response.data.message)
-    }
+      const { data } = await axios.post(backendUrl + '/api/order/delivery', { orderId, ...d }, { headers: { token } })
+      if (data.success) { toast.success('Dispatch saved'); fetchOrders() }
+      else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed') }
   }
 
   const downloadInvoice = async (orderId, orderNumber) => {
     try {
-      const response = await axios.get(backendUrl + `/api/order/invoice/${orderId}`, {
-        headers: { token },
-        responseType: 'blob'
-      });
-      
-      // Create blob link to download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `invoice-${orderNumber || orderId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success('Invoice downloaded successfully');
-    } catch (error) {
-      console.error('Error downloading invoice:', error);
-      toast.error('Failed to download invoice. Please try again.');
-    }
+      const res = await axios.get(`${backendUrl}/api/order/invoice/${orderId}`, { headers: { token }, responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([res.data]))
+      const a = document.createElement('a'); a.href = url; a.download = `invoice-${orderNumber || orderId}.pdf`; a.click(); URL.revokeObjectURL(url)
+    } catch { toast.error('Invoice download failed') }
   }
 
-  const downloadAllInvoices = async () => {
-    setDownloadingAll(true)
+  const exportExcel = async () => {
     try {
-      const ordersToDownload = filteredOrders.filter(order => order.orderNumber)
-      
-      if (ordersToDownload.length === 0) {
-        toast.error('No invoices available to download')
-        setDownloadingAll(false)
-        return
-      }
-
-      toast.info(`Downloading ${ordersToDownload.length} invoices...`)
-      
-      for (let i = 0; i < ordersToDownload.length; i++) {
-        const order = ordersToDownload[i]
-        await downloadInvoice(order._id, order.orderNumber)
-        // Small delay between downloads
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-      
-      toast.success(`Successfully downloaded ${ordersToDownload.length} invoices!`)
-    } catch (error) {
-      console.error('Error downloading all invoices:', error)
-      toast.error('Failed to download all invoices')
-    } finally {
-      setDownloadingAll(false)
-    }
+      const params = new URLSearchParams({ status: status === 'All' ? 'All' : status, from, to }).toString()
+      const res = await axios.get(`${backendUrl}/api/order/export?${params}`, { headers: { token }, responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([res.data]))
+      const a = document.createElement('a'); a.href = url; a.download = `orders-${Date.now()}.xlsx`; a.click(); URL.revokeObjectURL(url)
+      toast.success('Excel exported')
+    } catch { toast.error('Export failed') }
   }
 
-  const handleFilterChange = (status) => {
-    setStatusFilter(status)
-    if (status === 'All') {
-      setFilteredOrders(orders)
-    } else {
-      setFilteredOrders(orders.filter(order => order.status === status))
-    }
+  const loadReport = async (period = reportPeriod) => {
+    setReportPeriod(period); setShowReport(true)
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/order/report?period=${period}`, { headers: { token } })
+      if (data.success) setReport(data.rows)
+    } catch { toast.error('Failed to load report') }
   }
 
-  useEffect(() => {
-    fetchAllOrders();
-  }, [token])
-
-  useEffect(() => {
-    handleFilterChange(statusFilter)
-  }, [orders])
+  const paymentBadge = (o) => (o.paymentMethod || '').toUpperCase() === 'COD' ? 'COD' : 'PREPAID'
 
   return (
     <div className='p-6'>
-      <div className='mb-8'>
-        <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4'>
-          <div>
-            <h1 className='text-3xl font-bold'>Orders Management</h1>
-            <p className='text-sm text-muted mt-1'>View and manage customer orders</p>
+      <PageHeader
+        icon={ShoppingCart}
+        title='Order Management'
+        subtitle='Workflow · invoices · dispatch · reports'
+        actions={
+          <div className='flex flex-wrap items-center gap-2'>
+            <Btn variant='secondary' size='sm' icon={BarChart3} onClick={() => loadReport('daily')}>Reports</Btn>
+            <Btn variant='secondary' size='sm' icon={FileSpreadsheet} onClick={exportExcel}>Export Excel</Btn>
+            <Btn variant='secondary' size='sm' icon={RefreshCw} onClick={fetchOrders}>Refresh</Btn>
+            <Btn variant='primary' size='sm' icon={ClipboardList} onClick={() => setShowManual(true)}>Manual Order</Btn>
           </div>
-          <button
-            onClick={downloadAllInvoices}
-            disabled={downloadingAll || filteredOrders.length === 0}
-            className='bg-accent-gradient text-brand-deep px-6 py-3 rounded-lg font-semibold hover:brightness-110 transition-colors flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed'
-          >
-            <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
-            </svg>
-            {downloadingAll ? 'Downloading...' : `Download All Invoices (${filteredOrders.filter(o => o.orderNumber).length})`}
-          </button>
-        </div>
+        }
+      />
 
-        {/* Filter Buttons */}
-        <div className='flex flex-wrap gap-2 mb-6'>
-          <button
-            onClick={() => handleFilterChange('All')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              statusFilter === 'All'
-                ? 'bg-accent-gradient text-brand-deep'
-                : 'bg-white/10 text-fg hover:bg-gray-300'
-            }`}
-          >
-            All Orders ({orders.length})
-          </button>
-          <button
-            onClick={() => handleFilterChange('Order Placed')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              statusFilter === 'Order Placed'
-                ? 'bg-blue-600 text-white'
-                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-            }`}
-          >
-            Order Placed ({orders.filter(o => o.status === 'Order Placed').length})
-          </button>
-          <button
-            onClick={() => handleFilterChange('Packing')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              statusFilter === 'Packing'
-                ? 'bg-yellow-600 text-white'
-                : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-            }`}
-          >
-            Packing ({orders.filter(o => o.status === 'Packing').length})
-          </button>
-          <button
-            onClick={() => handleFilterChange('Shipped')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              statusFilter === 'Shipped'
-                ? 'bg-purple-600 text-white'
-                : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-            }`}
-          >
-            Shipped ({orders.filter(o => o.status === 'Shipped').length})
-          </button>
-          <button
-            onClick={() => handleFilterChange('Out for delivery')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              statusFilter === 'Out for delivery'
-                ? 'bg-orange-600 text-white'
-                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-            }`}
-          >
-            Out for Delivery ({orders.filter(o => o.status === 'Out for delivery').length})
-          </button>
-          <button
-            onClick={() => handleFilterChange('Delivered')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              statusFilter === 'Delivered'
-                ? 'bg-green-600 text-white'
-                : 'bg-green-100 text-green-700 hover:bg-green-200'
-            }`}
-          >
-            Delivered ({orders.filter(o => o.status === 'Delivered').length})
-          </button>
+      {/* Controls */}
+      <div className='glass rounded-2xl p-3 mb-4 flex flex-wrap items-center gap-3'>
+        <FilterTabs options={FILTERS} value={status} onChange={setStatus} />
+        <div className='flex items-center gap-2 ml-auto'>
+          <input type='date' value={from} onChange={(e) => setFrom(e.target.value)} className='px-2.5 py-2 text-sm rounded-xl bg-surface-2 border border-line text-fg focus:border-accent outline-none' />
+          <span className='text-faint text-xs'>to</span>
+          <input type='date' value={to} onChange={(e) => setTo(e.target.value)} className='px-2.5 py-2 text-sm rounded-xl bg-surface-2 border border-line text-fg focus:border-accent outline-none' />
+        </div>
+        <div className='relative min-w-[220px]'>
+          <Search size={15} className='absolute left-3 top-1/2 -translate-y-1/2 text-faint pointer-events-none' />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder='Order # / customer id / name…'
+            className='w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-surface-2 border border-line text-fg placeholder:text-faint focus:border-accent outline-none' />
         </div>
       </div>
 
-      {/* Orders List */}
-      {filteredOrders.length === 0 ? (
-        <div className='text-center py-20 glass rounded-lg border border-white/10'>
-          <svg className='w-16 h-16 mx-auto mb-4 text-gray-300' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={1.5} d='M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4' />
-          </svg>
-          <h3 className='text-xl font-semibold text-muted mb-2'>No orders found</h3>
-          <p className='text-muted'>
-            {statusFilter === 'All' 
-              ? 'No orders have been placed yet' 
-              : `No orders with status "${statusFilter}"`
-            }
-          </p>
-        </div>
+      {loading ? (
+        <div className='space-y-3'>{[0, 1, 2].map((i) => <div key={i} className='skeleton rounded-2xl h-40' />)}</div>
+      ) : shown.length === 0 ? (
+        <EmptyState icon={ShoppingCart} title='No orders' message='No orders match these filters.' />
       ) : (
-        <div className='space-y-4'>
-          {
-            filteredOrders.map((order, index) => (
-            <div className='glass border border-white/10 rounded-lg shadow-sm p-6 hover:shadow-lg transition-all' key={index}>
-              <div className='grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-6'>
-              <div className='flex gap-4'>
-                <div className='w-12 h-12 bg-surface-3 flex items-center justify-center flex-shrink-0'>
-                  <svg className='w-6 h-6 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' />
-                  </svg>
-                </div>
-                <div className='flex-1'>
-                  <div className='mb-3'>
-                    <p className='font-bold text-sm uppercase tracking-wide mb-2'>Order Items</p>
-                    {order.items.map((item, index) => (
-                      <p className='text-sm py-0.5' key={index}>
-                        {item.name} x {item.quantity} <span className='text-muted'>({item.size})</span>
-                      </p>
-                    ))}
+        <div className='space-y-3'>
+          {shown.map((o) => {
+            const isOpen = expanded[o._id]
+            const isReturn = o.status === 'Returned' || o.returnRequest?.requested
+            return (
+              <div key={o._id} className='glass rounded-2xl overflow-hidden'>
+                {/* header row */}
+                <div className='px-4 py-3 flex flex-wrap items-center gap-3'>
+                  <div className='min-w-0 flex-1'>
+                    <div className='flex items-center gap-2 flex-wrap'>
+                      <span className='font-mono text-sm font-bold text-accent'>{o.orderNumber}</span>
+                      <span className='text-xs text-muted'>· {o.customerId || o.userId?.name || o.address?.name}</span>
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest ${paymentBadge(o) === 'COD' ? 'bg-amber/15 text-amber' : 'bg-success/15 text-success'}`}>
+                        <CreditCard size={10} className='inline mr-1' />{paymentBadge(o)}{o.payment ? ' · Paid' : ''}
+                      </span>
+                      {isReturn && <span className='px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest bg-yellow-400/20 text-yellow-300'>Exchange / Return</span>}
+                    </div>
+                    <p className='text-xs text-muted mt-0.5'>{o.items.length} item(s) · {new Date(o.date).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
-                  <div>
-                    <p className='font-bold text-sm uppercase tracking-wide mb-1'>Customer</p>
-                    <p className='font-semibold'>{order.address.name || (order.address.firstName ? order.address.firstName + " " + (order.address.lastName || '') : 'Customer')}</p>
-                    <p className='text-sm text-muted'>{order.address.addressLine1 || order.address.street}</p>
-                    <p className='text-sm text-muted'>{order.address.city + ", " + order.address.state + ", " + (order.address.pincode || order.address.zipcode || '')}</p>
-                    <p className='text-sm text-muted'>{order.address.phone}</p>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <p className='font-bold text-sm uppercase tracking-wide mb-2'>Order Info</p>
-                <p className='text-sm mb-1'><span className='font-semibold'>Items:</span> {order.items.length}</p>
-                <p className='text-sm mb-1'><span className='font-semibold'>Payment:</span> {order.paymentMethod}</p>
-                <p className='text-sm mb-1'><span className='font-semibold'>Status:</span> { order.payment ? 'Paid' : 'Pending' }</p>
-                <p className='text-sm'><span className='font-semibold'>Date:</span> {new Date(order.date).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <p className='font-bold text-sm uppercase tracking-wide mb-2'>Amount</p>
-                <p className='text-2xl font-bold'>{currency}{order.amount}</p>
-              </div>
-              <div>
-                <p className='font-bold text-sm uppercase tracking-wide mb-2'>Update Status</p>
-                <select onChange={(event)=>statusHandler(event,order._id)} value={order.status} className='w-full px-4 py-3 border border-white/10 rounded-lg glass font-semibold focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all mb-3'>
-                  <option value="Order Placed">Order Placed</option>
-                  <option value="Packing">Packing</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Out for delivery">Out for delivery</option>
-                  <option value="Delivered">Delivered</option>
-                </select>
-                {order.orderNumber && (
-                  <button
-                    onClick={() => downloadInvoice(order._id, order.orderNumber)}
-                    className='w-full px-4 py-3 bg-accent-gradient text-brand-deep rounded-lg font-semibold hover:brightness-110 transition-colors flex items-center justify-center gap-2 mb-2'
-                  >
-                    <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
-                    </svg>
-                    Download Invoice
+                  <StatusPill status={o.status} />
+                  <p className='font-heading font-bold text-fg'>{currency}{o.amount}</p>
+                  <select value={WORKFLOW.includes(o.status) ? o.status : ''} onChange={(e) => changeStatus(o._id, e.target.value)}
+                    className='px-3 py-2 text-sm rounded-lg bg-surface-2 border border-line text-fg focus:border-accent outline-none'>
+                    {!WORKFLOW.includes(o.status) && <option value='' disabled>{o.status}</option>}
+                    {WORKFLOW.map((w) => <option key={w} value={w}>{w}</option>)}
+                  </select>
+                  <button onClick={() => downloadInvoice(o._id, o.orderNumber)} title='Invoice' className='grid place-items-center w-9 h-9 rounded-lg bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25'><Download size={15} /></button>
+                  <button onClick={() => setExpanded((x) => ({ ...x, [o._id]: !x[o._id] }))} className='inline-flex items-center gap-1 text-xs text-muted hover:text-fg'>
+                    Details <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
-                )}
-                {order.trackingNumber ? (
-                  <div className='mt-2 p-2 border border-white/10 text-xs'>
-                    <p className='text-[10px] uppercase tracking-widest text-muted mb-1'>Shipment</p>
-                    <p className='font-mono break-all mb-2'>{order.trackingNumber}</p>
-                    <div className='flex flex-wrap gap-1'>
-                      {['picked_up', 'in_transit', 'out_for_delivery', 'delivered'].map((s) => (
-                        <button
-                          key={s}
-                          type='button'
-                          onClick={async () => {
-                            const { data } = await axios.get(backendUrl + '/api/shipment/admin/order/' + order._id, { headers: { token } })
-                            if (data.success && data.shipment) pushEvent(data.shipment._id, s)
-                          }}
-                          className='text-[9px] uppercase tracking-widest px-1.5 py-1 border border-white/10 hover:border-accent'
-                        >
-                          {s.replace(/_/g, ' ')}
-                        </button>
+                </div>
+
+                {isOpen && (
+                  <div className='px-4 pb-4 pt-1 border-t border-line/60 grid md:grid-cols-3 gap-4 animate-fade-in'>
+                    {/* Items + customer */}
+                    <div>
+                      <p className='text-[10px] uppercase tracking-widest text-faint mb-1'>Products</p>
+                      {o.items.map((it, i) => (
+                        <p key={i} className='text-sm text-fg'>{it.name} <span className='text-muted'>× {it.quantity}{it.size ? ` · ${it.size}` : ''}{it.color ? ` · ${it.color}` : ''}</span></p>
                       ))}
+                      <p className='text-[10px] uppercase tracking-widest text-faint mt-3 mb-1'>Customer & delivery</p>
+                      <p className='text-sm text-fg'>{o.address?.name} · {o.address?.phone}</p>
+                      <p className='text-xs text-muted'>{[o.address?.addressLine1, o.address?.addressLine2, o.address?.city, o.address?.state, o.address?.pincode].filter(Boolean).join(', ')}</p>
+                    </div>
+
+                    {/* Dispatch */}
+                    <DispatchPanel order={o} onSave={saveDelivery} />
+
+                    {/* Notes */}
+                    <div>
+                      <p className='text-[10px] uppercase tracking-widest text-faint mb-1 inline-flex items-center gap-1'><StickyNote size={12} /> Order notes</p>
+                      <div className='space-y-1 max-h-28 overflow-y-auto mb-2'>
+                        {(o.orderNotes || []).length === 0 ? <p className='text-xs text-faint'>No notes.</p> :
+                          o.orderNotes.map((n, i) => (
+                            <div key={i} className='text-xs px-2 py-1.5 rounded-lg bg-surface-2 border border-line'>
+                              <p className='text-fg'>{n.note}</p>
+                              <p className='text-faint text-[10px]'>{n.by} · {new Date(n.at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                          ))}
+                      </div>
+                      <div className='flex gap-2'>
+                        <input value={noteDraft[o._id] || ''} onChange={(e) => setNoteDraft((d) => ({ ...d, [o._id]: e.target.value }))}
+                          placeholder='Add a note…' className='flex-1 px-2.5 py-1.5 text-xs rounded-lg bg-surface-2 border border-line text-fg focus:border-accent outline-none' />
+                        <Btn variant='secondary' size='sm' onClick={() => addNote(o._id)}>Add</Btn>
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => createShipment(order._id)}
-                    className='w-full px-4 py-2 border border-accent text-sm font-semibold hover:brightness-110'
-                  >
-                    Create Shipment
-                  </button>
                 )}
               </div>
-              </div>
-            </div>
-          ))
-        }
+            )
+          })}
         </div>
       )}
+
+      <ManualOrderModal open={showManual} onClose={() => setShowManual(false)} token={token} onDone={fetchOrders} />
+
+      {/* Report modal */}
+      <Modal open={showReport} onClose={() => setShowReport(false)} icon={BarChart3} title='Order Report' subtitle='Sales & fulfilment over time' size='lg'>
+        <div className='flex gap-2 mb-3'>
+          {['daily', 'weekly', 'monthly', 'yearly'].map((p) => (
+            <button key={p} onClick={() => loadReport(p)} className={`px-3 py-1.5 text-xs uppercase tracking-widest font-semibold rounded-lg border ${reportPeriod === p ? 'bg-accent/20 text-accent border-accent/40' : 'bg-surface-2 text-muted border-line hover:border-accent/40'}`}>{p}</button>
+          ))}
+        </div>
+        <div className='rounded-xl border border-line overflow-hidden'>
+          <table className='w-full text-sm'>
+            <thead className='bg-surface/40 text-[10px] uppercase tracking-widest text-faint'>
+              <tr><th className='text-left px-3 py-2'>Period</th><th className='text-right px-3 py-2'>Orders</th><th className='text-right px-3 py-2'>Revenue</th><th className='text-right px-3 py-2'>Delivered</th><th className='text-right px-3 py-2'>Cancelled</th></tr>
+            </thead>
+            <tbody>
+              {report.map((r) => (
+                <tr key={r._id} className='border-t border-line/60'>
+                  <td className='px-3 py-2 font-mono text-xs text-fg'>{r._id}</td>
+                  <td className='px-3 py-2 text-right text-fg'>{r.orders}</td>
+                  <td className='px-3 py-2 text-right text-accent font-semibold'>{currency}{Math.round(r.revenue).toLocaleString('en-IN')}</td>
+                  <td className='px-3 py-2 text-right text-success'>{r.delivered}</td>
+                  <td className='px-3 py-2 text-right text-danger'>{r.cancelled}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Modal>
+    </div>
+  )
+}
+
+// Pickup / dispatch capture (delivery partner, courier, AWB, weight, dimensions).
+const DispatchPanel = ({ order, onSave }) => {
+  const d = order.delivery || {}
+  const [form, setForm] = useState({
+    partnerName: d.partnerName || '', courierName: d.courierName || '',
+    shipmentId: d.shipmentId || '', weight: d.weight || '', dimensions: d.dimensions || '',
+  })
+  const f = 'w-full px-2.5 py-1.5 text-xs rounded-lg bg-surface-2 border border-line text-fg placeholder:text-faint focus:border-accent outline-none'
+  return (
+    <div>
+      <p className='text-[10px] uppercase tracking-widest text-faint mb-1 inline-flex items-center gap-1'><Truck size={12} /> Dispatch / pickup</p>
+      <div className='grid grid-cols-2 gap-1.5'>
+        <input value={form.partnerName} onChange={(e) => setForm({ ...form, partnerName: e.target.value })} placeholder='Delivery partner' className={f} />
+        <input value={form.courierName} onChange={(e) => setForm({ ...form, courierName: e.target.value })} placeholder='Courier' className={f} />
+        <input value={form.shipmentId} onChange={(e) => setForm({ ...form, shipmentId: e.target.value })} placeholder='Shipment / AWB id' className={f + ' col-span-2'} />
+        <input value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} placeholder='Weight' className={f} />
+        <input value={form.dimensions} onChange={(e) => setForm({ ...form, dimensions: e.target.value })} placeholder='L×B×H' className={f} />
+      </div>
+      <div className='flex gap-2 mt-2'>
+        <Btn variant='secondary' size='sm' onClick={() => onSave(order._id, form)}>Save</Btn>
+        <Btn variant='primary' size='sm' onClick={() => onSave(order._id, { ...form, markPickuped: true })}>Save & mark Pickuped</Btn>
+      </div>
     </div>
   )
 }

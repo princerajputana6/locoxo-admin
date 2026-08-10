@@ -4,11 +4,11 @@ import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
 import {
   Boxes, Search, PackagePlus, Barcode, Printer, X, ChevronDown,
-  Tag, RefreshCw, Layers, AlertTriangle, PackageX, Sparkles,
+  Tag, RefreshCw, Layers, AlertTriangle, PackageX, Sparkles, Hash,
 } from 'lucide-react'
 import {
   PageHeader, Btn, StatCard, FilterTabs, EmptyState, StatusPill,
-  BulkAddModal, BarcodeExportModal,
+  BulkAddModal, BarcodeExportModal, InventoryDetailModal, ProductCodeModal,
 } from '../components/ui'
 
 const Inventory = ({ token }) => {
@@ -23,6 +23,8 @@ const Inventory = ({ token }) => {
 
   const [showBulk, setShowBulk] = useState(false)
   const [showExport, setShowExport] = useState(false)
+  const [showCode, setShowCode] = useState(false)
+  const [detailId, setDetailId] = useState(null)
 
   const fetchAll = async () => {
     setLoading(true)
@@ -125,13 +127,15 @@ const Inventory = ({ token }) => {
   const removeFromQueue = (idx) => setLabelQueue((q) => q.filter((_, i) => i !== idx))
   const printLabels = () => { if (labelQueue.length > 0) window.print() }
 
-  // Labeled barcode image (barcode + product details baked in)
-  const labelUrl = (p, v) => backendUrl + '/api/inventory/label/' + encodeURIComponent(v.sku) + '?' +
-    new URLSearchParams({ name: p.name || '', price: p.price ?? '', size: v.size || '', color: v.color || '', stock: v.stock ?? '' }).toString()
+  // Labeled barcode image (Indian EAN-13 + product details baked in)
+  const labelParams = (p, v) => new URLSearchParams({
+    name: p.name || '', price: p.price ?? '', size: v.size || '', color: v.color || '', stock: v.stock ?? '',
+    code: v.barcode || v.sku || '', human: v.humanBarcode || '',
+  }).toString()
+  const labelUrl = (p, v) => backendUrl + '/api/inventory/label/' + encodeURIComponent(v.sku) + '?' + labelParams(p, v)
 
   // Printable PDF label endpoint (opens/prints correctly everywhere)
-  const labelPdfUrl = (p, v) => backendUrl + '/api/inventory/label-pdf/' + encodeURIComponent(v.sku) + '?' +
-    new URLSearchParams({ name: p.name || '', price: p.price ?? '', size: v.size || '', color: v.color || '', stock: v.stock ?? '' }).toString()
+  const labelPdfUrl = (p, v) => backendUrl + '/api/inventory/label-pdf/' + encodeURIComponent(v.sku) + '?' + labelParams(p, v)
 
   const downloadLabel = async (p, v) => {
     try {
@@ -145,6 +149,19 @@ const Inventory = ({ token }) => {
     } catch { toast.error('Download failed') }
   }
 
+  // Full legal apparel price tag (MRP, mfg details, EAN-13) as a printable PDF.
+  const downloadPriceTag = async (v) => {
+    try {
+      const res = await fetch(backendUrl + '/api/inventory/pricetag/' + encodeURIComponent(v.sku))
+      if (!res.ok) throw new Error('bad response')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = `pricetag-${v.sku}.pdf`; a.click()
+      URL.revokeObjectURL(url)
+    } catch { toast.error('Price tag download failed') }
+  }
+
   return (
     <div className='p-6'>
       <PageHeader
@@ -153,6 +170,7 @@ const Inventory = ({ token }) => {
         subtitle='Stock, barcodes, low-stock alerts & clearance'
         actions={
           <div className='flex flex-wrap items-center gap-2'>
+            <Btn variant='secondary' size='sm' icon={Hash} onClick={() => setShowCode(true)}>Product Code</Btn>
             <Btn variant='secondary' size='sm' icon={RefreshCw} onClick={backfillSkus}>Backfill SKUs</Btn>
             <Btn variant='secondary' size='sm' icon={Barcode} onClick={() => setShowExport(true)}>Barcodes PDF</Btn>
             <Btn variant='primary' size='sm' icon={PackagePlus} onClick={() => setShowBulk(true)}>Bulk Add</Btn>
@@ -259,10 +277,13 @@ const Inventory = ({ token }) => {
                     className='w-4 h-4 accent-accent cursor-pointer shrink-0'
                   />
                   <img src={Array.isArray(p.image) ? p.image[0] : p.image} alt='' className='w-11 h-11 object-cover rounded-lg bg-surface-2 shrink-0' />
-                  <div className='flex-1 min-w-0'>
-                    <p className='font-semibold text-sm text-fg truncate'>{p.name}</p>
-                    <p className='text-xs text-muted truncate'>{p.category} · {variants.length} variants · ₹{p.price}</p>
-                  </div>
+                  <button onClick={() => setDetailId(p._id)} className='flex-1 min-w-0 text-left group'>
+                    <p className='font-semibold text-sm text-fg truncate group-hover:text-accent transition-colors'>{p.name}</p>
+                    <p className='text-xs text-muted truncate'>
+                      {p.productCode && <span className='font-mono text-accent/80'>{p.productCode}</span>}
+                      {p.productCode ? ' · ' : ''}{p.audience || p.category} · {variants.length} variants · ₹{p.price}
+                    </p>
+                  </button>
                   <StatusPill status={status === 'ok' ? 'In stock' : status === 'unknown' ? 'No variants' : status === 'low' ? 'Low' : 'Out'} />
                   <div className='text-right'>
                     <p className='text-[10px] uppercase tracking-widest text-faint'>Total Stock</p>
@@ -333,6 +354,8 @@ const Inventory = ({ token }) => {
                             </td>
                             <td className='py-2'>
                               <p className='font-mono text-xs text-muted'>{v.sku || '—'}</p>
+                              {v.humanBarcode && <p className='font-mono text-[10px] text-faint'>{v.humanBarcode}</p>}
+                              {v.barcode && <p className='font-mono text-[10px] text-accent/70'>EAN {v.barcode}</p>}
                               {v.sku && (
                                 <img
                                   src={labelUrl(p, v)}
@@ -354,6 +377,13 @@ const Inventory = ({ token }) => {
                                   className='text-[10px] uppercase tracking-widest font-semibold bg-accent/15 text-accent border border-accent/30 rounded-lg px-2.5 py-1 hover:bg-accent/25 disabled:opacity-30 transition-all'
                                 >
                                   Download
+                                </button>
+                                <button
+                                  onClick={() => downloadPriceTag(v)}
+                                  disabled={!v.sku}
+                                  className='text-[10px] uppercase tracking-widest font-semibold border border-line rounded-lg px-2.5 py-1 text-muted hover:text-accent hover:border-accent/50 disabled:opacity-30 transition-all'
+                                >
+                                  Price Tag
                                 </button>
                                 <button
                                   onClick={() => queueLabel(p, v)}
@@ -400,6 +430,8 @@ const Inventory = ({ token }) => {
       {/* Modals */}
       <BulkAddModal open={showBulk} onClose={() => setShowBulk(false)} token={token} onDone={fetchAll} />
       <BarcodeExportModal open={showExport} onClose={() => setShowExport(false)} token={token} selectedIds={selectedIds} defaultFilter={filter === 'all' ? 'all' : filter} />
+      <ProductCodeModal open={showCode} onClose={() => setShowCode(false)} token={token} />
+      <InventoryDetailModal open={!!detailId} onClose={() => setDetailId(null)} token={token} productId={detailId} onChanged={fetchAll} />
     </div>
   )
 }
