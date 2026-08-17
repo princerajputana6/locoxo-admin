@@ -115,7 +115,7 @@ const BarcodeExportModal = ({ open, onClose, token, selectedIds = [], defaultFil
                   : 'border-transparent bg-surface-2 hover:bg-surface-3'}
                 ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
             >
-              <span className={`grid place-items-center w-9 h-9 rounded-lg shrink-0 transition-colors ${active ? 'bg-accent-gradient text-brand-deep' : 'bg-surface-3 text-muted'}`}>
+              <span className={`grid place-items-center w-9 h-9 rounded-lg shrink-0 transition-colors ${active ? 'bg-accent-gradient text-white' : 'bg-surface-3 text-muted'}`}>
                 {disabled ? <FileWarning size={16} /> : <Barcode size={16} />}
               </span>
               <span className='min-w-0'>
@@ -124,7 +124,7 @@ const BarcodeExportModal = ({ open, onClose, token, selectedIds = [], defaultFil
               </span>
               {/* Radio indicator */}
               <span className={`ml-auto grid place-items-center w-5 h-5 rounded-full border-2 shrink-0 transition-all ${active ? 'border-accent bg-accent' : 'border-faint'}`}>
-                {active && <Check size={12} className='text-brand-deep' strokeWidth={3.5} />}
+                {active && <Check size={12} className='text-white' strokeWidth={3.5} />}
               </span>
             </button>
           )

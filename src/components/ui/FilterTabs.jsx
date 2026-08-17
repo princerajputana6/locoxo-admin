@@ -15,7 +15,7 @@ const FilterTabs = ({ options, value, onChange, className = '' }) => {
             onClick={() => onChange(val)}
             className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-all duration-200 border ${
               active
-                ? 'bg-accent-gradient text-brand-deep border-transparent shadow-glow'
+                ? 'bg-accent-gradient text-white border-transparent shadow-glow'
                 : 'bg-surface-2 text-muted border-line hover:text-fg hover:border-accent/50'
             }`}
           >

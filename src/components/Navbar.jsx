@@ -34,7 +34,7 @@ const Navbar = ({ setToken, userRole, userData }) => {
         )}
 
         {(userRole === 'influencer' && userData) ? (
-          <div className='grid place-items-center w-9 h-9 rounded-full bg-accent-gradient text-brand-deep font-bold text-sm shrink-0'>
+          <div className='grid place-items-center w-9 h-9 rounded-full bg-accent-gradient text-white font-bold text-sm shrink-0'>
             {userData.name?.charAt(0)?.toUpperCase() || 'U'}
           </div>
         ) : (

@@ -4,7 +4,7 @@ import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
 import {
   Boxes, Search, PackagePlus, Barcode, Printer, X, ChevronDown,
-  Tag, RefreshCw, Layers, AlertTriangle, PackageX, Sparkles, Hash,
+  Tag, RefreshCw, Layers, AlertTriangle, PackageX, Sparkles, Hash, Trash2,
 } from 'lucide-react'
 import {
   PageHeader, Btn, StatCard, FilterTabs, EmptyState, StatusPill,
@@ -112,6 +112,15 @@ const Inventory = ({ token }) => {
       }, { headers: { token } })
       fetchAll()
     } catch { toast.error('Failed') }
+  }
+
+  const deleteProduct = async (p) => {
+    if (!window.confirm(`Delete "${p.name}" and all its stock permanently?`)) return
+    try {
+      const { data } = await axios.post(backendUrl + '/api/product/remove', { id: p._id }, { headers: { token } })
+      if (data.success) { toast.success('Product deleted'); fetchAll() }
+      else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Delete failed') }
   }
 
   const backfillSkus = async () => {
@@ -327,6 +336,13 @@ const Inventory = ({ token }) => {
                   >
                     {isOpen ? 'Hide' : 'Variants'}
                     <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <button
+                    onClick={() => deleteProduct(p)}
+                    title='Delete product'
+                    className='grid place-items-center w-8 h-8 rounded-lg text-faint hover:text-danger hover:bg-danger/10 transition-colors'
+                  >
+                    <Trash2 size={15} />
                   </button>
                 </div>
 

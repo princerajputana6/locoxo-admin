@@ -101,7 +101,7 @@ const MembershipPlans = ({ token }) => {
           {plans.map((p, i) => (
             <div key={p._id} style={{ animationDelay: `${i * 60}ms` }} className='glass card-hover animate-slide-up rounded-2xl p-5 relative'>
               <button onClick={() => remove(p._id)} className='absolute top-4 right-4 text-faint hover:text-danger transition-colors'><Trash2 size={16} /></button>
-              {p.badge && <span className='inline-block bg-accent-gradient text-brand-deep text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-2'>{p.badge}</span>}
+              {p.badge && <span className='inline-block bg-accent-gradient text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-2'>{p.badge}</span>}
               <h3 className='font-heading font-bold text-lg text-fg'>{p.name}</h3>
               <p className='text-2xl font-heading font-extrabold text-accent my-2'>{currency}{p.price}<span className='text-sm text-faint font-normal'> / {p.durationDays}d</span></p>
               <p className='text-sm text-muted'>{p.description}</p>

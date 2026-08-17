@@ -176,7 +176,7 @@ const Influencers = ({ token }) => {
         <h1 className='text-3xl font-bold'>Influencer Management</h1>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className='bg-accent-gradient text-brand-deep px-6 py-2 rounded hover:brightness-110 transition-colors'
+          className='bg-accent-gradient text-white px-6 py-2 rounded hover:brightness-110 transition-colors'
         >
           {showAddForm ? 'Cancel' : '+ Add Influencer'}
         </button>
@@ -290,7 +290,7 @@ const Influencers = ({ token }) => {
             <div className='md:col-span-2'>
               <button
                 type='submit'
-                className='bg-accent-gradient text-brand-deep px-8 py-2 rounded hover:brightness-110 transition-colors'
+                className='bg-accent-gradient text-white px-8 py-2 rounded hover:brightness-110 transition-colors'
               >
                 Add Influencer
               </button>
@@ -378,7 +378,7 @@ const Influencers = ({ token }) => {
             <div className='md:col-span-2 flex gap-3'>
               <button
                 type='submit'
-                className='bg-accent-gradient text-brand-deep px-8 py-2 rounded hover:brightness-110 transition-colors'
+                className='bg-accent-gradient text-white px-8 py-2 rounded hover:brightness-110 transition-colors'
               >
                 Update Influencer
               </button>

@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react'
 
 const variants = {
   primary:
-    'bg-accent-gradient text-brand-deep font-semibold shadow-glow hover:brightness-110 active:brightness-95',
+    'bg-accent-gradient text-white font-semibold shadow-glow hover:brightness-110 active:brightness-95',
   secondary:
     'bg-surface-2 text-fg border border-line hover:border-accent/60 hover:bg-surface-3',
   ghost:

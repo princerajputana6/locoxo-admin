@@ -189,7 +189,7 @@ const ProductForm = ({ token, initial, onDone, onCancel }) => {
             <div key={'e' + i} className='relative w-20 h-20 rounded-lg overflow-hidden border border-line group'>
               <img src={url} alt='' className='w-full h-full object-cover' />
               <button type='button' onClick={() => removeExistingImage(i)} className='absolute top-0.5 right-0.5 w-5 h-5 grid place-items-center rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100'><X size={12} /></button>
-              {i === 0 && <span className='absolute bottom-0 inset-x-0 text-[8px] text-center bg-accent text-brand-deep font-bold'>MAIN</span>}
+              {i === 0 && <span className='absolute bottom-0 inset-x-0 text-[8px] text-center bg-accent text-white font-bold'>MAIN</span>}
             </div>
           ))}
           {newImages.map((img, i) => (

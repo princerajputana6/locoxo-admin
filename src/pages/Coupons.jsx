@@ -182,7 +182,7 @@ const Coupons = ({ token }) => {
             </div>
             <button
               type='submit'
-              className='w-full bg-accent-gradient text-brand-deep py-3 font-semibold rounded-lg hover:brightness-110 transition-colors'
+              className='w-full bg-accent-gradient text-white py-3 font-semibold rounded-lg hover:brightness-110 transition-colors'
             >
               Create Coupon
             </button>

@@ -75,31 +75,31 @@ const SalesReport = ({ token }) => {
         <div className='flex flex-wrap gap-3 mb-4'>
           <button
             onClick={() => setDateRange('all')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${dateRange === 'all' ? 'bg-accent-gradient text-brand-deep' : 'bg-white/5 text-fg hover:bg-white/10'}`}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${dateRange === 'all' ? 'bg-accent-gradient text-white' : 'bg-white/5 text-fg hover:bg-white/10'}`}
           >
             All Time
           </button>
           <button
             onClick={() => setDateRange('today')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${dateRange === 'today' ? 'bg-accent-gradient text-brand-deep' : 'bg-white/5 text-fg hover:bg-white/10'}`}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${dateRange === 'today' ? 'bg-accent-gradient text-white' : 'bg-white/5 text-fg hover:bg-white/10'}`}
           >
             Today
           </button>
           <button
             onClick={() => setDateRange('week')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${dateRange === 'week' ? 'bg-accent-gradient text-brand-deep' : 'bg-white/5 text-fg hover:bg-white/10'}`}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${dateRange === 'week' ? 'bg-accent-gradient text-white' : 'bg-white/5 text-fg hover:bg-white/10'}`}
           >
             Last 7 Days
           </button>
           <button
             onClick={() => setDateRange('month')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${dateRange === 'month' ? 'bg-accent-gradient text-brand-deep' : 'bg-white/5 text-fg hover:bg-white/10'}`}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${dateRange === 'month' ? 'bg-accent-gradient text-white' : 'bg-white/5 text-fg hover:bg-white/10'}`}
           >
             Last 30 Days
           </button>
           <button
             onClick={() => setDateRange('custom')}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${dateRange === 'custom' ? 'bg-accent-gradient text-brand-deep' : 'bg-white/5 text-fg hover:bg-white/10'}`}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${dateRange === 'custom' ? 'bg-accent-gradient text-white' : 'bg-white/5 text-fg hover:bg-white/10'}`}
           >
             Custom Range
           </button>

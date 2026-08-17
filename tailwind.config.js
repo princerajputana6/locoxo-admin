@@ -7,36 +7,36 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Dark surface scale
-        ink:      '#0B1120',   // page background
-        surface:  '#151E2E',   // cards
-        'surface-2': '#1C2738',// raised elements / inputs
-        'surface-3': '#243149',// hover surfaces
-        line:     '#283649',   // borders
-        // Brand
-        accent:   '#F59A23',   // primary highlight / logo orange
-        'accent-dark': '#E57E00',
-        brand:    '#0E4F86',   // navy blue
-        'brand-deep': '#062B52',
-        glow:     '#FFB84D',   // glowing accent variant
-        // Status (tuned for dark)
-        success:  '#34D399',
-        amber:    '#FBBF24',
-        danger:   '#F87171',
-        info:     '#60A5FA',
-        violet:   '#A78BFA',
+        // Light surface scale (white + blue theme)
+        ink:      '#F4F7FB',   // page background (light gray)
+        surface:  '#FFFFFF',   // cards
+        'surface-2': '#F8FAFC',// raised elements / inputs
+        'surface-3': '#EEF3F9',// hover surfaces
+        line:     '#E4E9F0',   // borders
+        // Brand — blue primary
+        accent:   '#2563EB',   // primary blue
+        'accent-dark': '#1D4ED8',
+        brand:    '#1D4ED8',   // deep blue
+        'brand-deep': '#1E3A8A',
+        glow:     '#3B82F6',   // lighter blue variant
+        // Status (tuned for light)
+        success:  '#16A34A',
+        amber:    '#D97706',
+        danger:   '#DC2626',
+        info:     '#2563EB',
+        violet:   '#7C3AED',
         // Text
-        fg:       '#E5EDF5',   // primary text
-        muted:    '#8FA0B5',   // secondary text
-        faint:    '#5F718A',   // tertiary / labels
+        fg:       '#0F172A',   // primary text (slate-900)
+        muted:    '#64748B',   // secondary text (slate-500)
+        faint:    '#94A3B8',   // tertiary / labels (slate-400)
         // Kept for backward-compat with any existing locoxo-* refs
         locoxo: {
-          header: '#062B52',
-          blue: '#0E4F86',
-          orange: '#F59A23',
-          'orange-dark': '#E57E00',
-          bg: '#0B1120',
-          text: '#E5EDF5',
+          header: '#1E3A8A',
+          blue: '#2563EB',
+          orange: '#2563EB',
+          'orange-dark': '#1D4ED8',
+          bg: '#F4F7FB',
+          text: '#0F172A',
         },
       },
       fontFamily: {
@@ -45,14 +45,14 @@ export default {
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       boxShadow: {
-        glow: '0 0 0 1px rgba(245,154,35,0.35), 0 8px 30px -8px rgba(245,154,35,0.45)',
-        card: '0 10px 30px -12px rgba(0,0,0,0.6)',
-        'card-hover': '0 18px 40px -16px rgba(0,0,0,0.7)',
+        glow: '0 0 0 1px rgba(37,99,235,0.25), 0 8px 30px -8px rgba(37,99,235,0.35)',
+        card: '0 1px 2px rgba(16,24,40,0.05), 0 8px 24px -12px rgba(16,24,40,0.12)',
+        'card-hover': '0 4px 12px rgba(16,24,40,0.08), 0 18px 40px -16px rgba(16,24,40,0.16)',
       },
       backgroundImage: {
-        'accent-gradient': 'linear-gradient(135deg, #F59A23 0%, #FFB84D 100%)',
-        'brand-gradient': 'linear-gradient(135deg, #0E4F86 0%, #062B52 100%)',
-        'panel-gradient': 'linear-gradient(180deg, rgba(28,39,56,0.6) 0%, rgba(21,30,46,0.9) 100%)',
+        'accent-gradient': 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
+        'brand-gradient': 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 100%)',
+        'panel-gradient': 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
       },
       keyframes: {
         'fade-in': {

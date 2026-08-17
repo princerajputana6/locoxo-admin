@@ -1,290 +1,196 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
 import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
+import { RefreshCw, Plus, Search, Filter, Pencil, Trash2, Eye, Tag } from 'lucide-react'
 
+const PLACEHOLDER = 'https://placehold.co/80x80/EEF3F9/94A3B8?text=IMG'
+
+// Category Management list — one row per Category → Sub → Child path (image 2).
 const Categories = ({ token }) => {
-  const [categories, setCategories] = useState([])
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
-  const [description, setDescription] = useState('')
-  const [parentCategory, setParentCategory] = useState('')
-  const [isEditing, setIsEditing] = useState(false)
-  const [editId, setEditId] = useState(null)
-  const [expandedCategories, setExpandedCategories] = useState({})
+  const navigate = useNavigate()
+  const [tree, setTree] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [q, setQ] = useState('')
+  const [fCat, setFCat] = useState('All')
+  const [fSub, setFSub] = useState('All')
+  const [fChild, setFChild] = useState('All')
+  const [fStatus, setFStatus] = useState('All')
+  const [page, setPage] = useState(1)
+  const perPage = 8
 
-  const fetchCategories = async () => {
+  const fetchTree = async () => {
+    setLoading(true)
     try {
-      const response = await axios.get(backendUrl + '/api/category/list')
-      if (response.data.success) {
-        setCategories(response.data.categories)
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(error.message)
-    }
+      const { data } = await axios.get(backendUrl + '/api/category/tree', { headers: { token } })
+      if (data.success) setTree(data.tree)
+      else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed to load categories') }
+    finally { setLoading(false) }
   }
+  useEffect(() => { fetchTree() }, [])
 
-  const onSubmitHandler = async (e) => {
-    e.preventDefault()
-    try {
-      const data = { 
-        name, 
-        slug, 
-        description,
-        parentCategory: parentCategory || null
-      }
-      
-      if (isEditing) {
-        const response = await axios.put(backendUrl + `/api/category/update/${editId}`, data, { headers: { token } })
-        if (response.data.success) {
-          toast.success('Category updated successfully')
-          resetForm()
-          fetchCategories()
-        }
-      } else {
-        const response = await axios.post(backendUrl + '/api/category/add', data, { headers: { token } })
-        if (response.data.success) {
-          toast.success('Category added successfully')
-          resetForm()
-          fetchCategories()
-        }
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(error.response?.data?.message || error.message)
-    }
-  }
-
-  const editCategory = (category) => {
-    setName(category.name)
-    setSlug(category.slug)
-    setDescription(category.description || '')
-    setParentCategory(category.parentCategory || '')
-    setIsEditing(true)
-    setEditId(category._id)
-  }
-
-  const toggleCategory = (categoryId) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }))
-  }
-
-  const buildCategoryTree = (categories) => {
-    const categoryMap = {}
-    const tree = []
-
-    categories.forEach(cat => {
-      categoryMap[cat._id] = { ...cat, children: [] }
+  // Flatten into path rows: main → sub → child (leaf). Missing levels shown as —.
+  const rows = useMemo(() => {
+    const out = []
+    tree.forEach((main) => {
+      const subs = main.kids || []
+      if (subs.length === 0) { out.push({ main, sub: null, child: null }); return }
+      subs.forEach((sub) => {
+        const children = sub.kids || []
+        if (children.length === 0) out.push({ main, sub, child: null })
+        else children.forEach((child) => out.push({ main, sub, child }))
+      })
     })
+    return out
+  }, [tree])
 
-    categories.forEach(cat => {
-      if (cat.parentCategory && categoryMap[cat.parentCategory]) {
-        categoryMap[cat.parentCategory].children.push(categoryMap[cat._id])
-      } else if (!cat.parentCategory) {
-        tree.push(categoryMap[cat._id])
-      }
+  const opts = useMemo(() => {
+    const cats = new Set(), subs = new Set(), children = new Set()
+    rows.forEach((r) => { if (r.main) cats.add(r.main.name); if (r.sub) subs.add(r.sub.name); if (r.child) children.add(r.child.name) })
+    return { cats: [...cats], subs: [...subs], children: [...children] }
+  }, [rows])
+
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase()
+    return rows.filter((r) => {
+      if (fCat !== 'All' && r.main?.name !== fCat) return false
+      if (fSub !== 'All' && r.sub?.name !== fSub) return false
+      if (fChild !== 'All' && r.child?.name !== fChild) return false
+      const leaf = r.child || r.sub || r.main
+      if (fStatus !== 'All' && (leaf?.status || 'active') !== fStatus) return false
+      if (s && !`${r.main?.name} ${r.sub?.name || ''} ${r.child?.name || ''}`.toLowerCase().includes(s)) return false
+      return true
     })
+  }, [rows, q, fCat, fSub, fChild, fStatus])
 
-    return tree
-  }
+  const pageRows = filtered.slice((page - 1) * perPage, page * perPage)
+  const pages = Math.max(1, Math.ceil(filtered.length / perPage))
 
-  const renderCategoryTree = (categories, level = 0) => {
-    return categories.map((category) => (
-      <div key={category._id} className='mb-2'>
-        <div 
-          className={`flex items-center justify-between p-4 border border-white/10 rounded-lg hover:shadow-md transition-all ${
-            level > 0 ? 'ml-' + (level * 6) : ''
-          }`}
-          style={{ marginLeft: `${level * 24}px` }}
-        >
-          <div className='flex items-center gap-3 flex-1'>
-            {category.children && category.children.length > 0 && (
-              <button
-                onClick={() => toggleCategory(category._id)}
-                className='text-muted hover:text-fg'
-              >
-                {expandedCategories[category._id] ? (
-                  <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
-                  </svg>
-                ) : (
-                  <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 5l7 7-7 7' />
-                  </svg>
-                )}
-              </button>
-            )}
-            <div className='flex-1'>
-              <div className='flex items-center gap-2'>
-                <h3 className='font-semibold text-lg'>{category.name}</h3>
-                {level > 0 && (
-                  <span className='text-xs bg-white/10 px-2 py-1 rounded'>
-                    Level {level}
-                  </span>
-                )}
-              </div>
-              <p className='text-sm text-muted'>Slug: {category.slug}</p>
-              {category.description && <p className='text-sm text-muted mt-1'>{category.description}</p>}
-            </div>
-          </div>
-          <div className='flex gap-2'>
-            <button
-              onClick={() => editCategory(category)}
-              className='px-4 py-2 bg-white/5 text-fg rounded-lg font-semibold hover:bg-white/10 transition-colors text-sm'
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => deleteCategory(category._id)}
-              className='px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors text-sm'
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-        {category.children && category.children.length > 0 && expandedCategories[category._id] && (
-          <div className='mt-2'>
-            {renderCategoryTree(category.children, level + 1)}
-          </div>
-        )}
-      </div>
-    ))
-  }
-
-  const deleteCategory = async (id) => {
-    if (!confirm('Are you sure you want to delete this category?')) return
-    
+  const toggleStatus = async (node) => {
     try {
-      const response = await axios.delete(backendUrl + `/api/category/remove/${id}`, { headers: { token } })
-      if (response.data.success) {
-        toast.success('Category deleted successfully')
-        fetchCategories()
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(error.response?.data?.message || error.message)
-    }
+      await axios.put(`${backendUrl}/api/category/flag/${node._id}`, { field: 'status', value: node.status === 'active' ? 'inactive' : 'active' }, { headers: { token } })
+      fetchTree()
+    } catch { toast.error('Failed') }
+  }
+  const remove = async (node) => {
+    if (!window.confirm(`Delete "${node.name}"?`)) return
+    try { await axios.delete(`${backendUrl}/api/category/remove/${node._id}`, { headers: { token } }); toast.success('Deleted'); fetchTree() }
+    catch { toast.error('Delete failed') }
   }
 
-  const resetForm = () => {
-    setName('')
-    setSlug('')
-    setDescription('')
-    setParentCategory('')
-    setIsEditing(false)
-    setEditId(null)
-  }
-
-  useEffect(() => {
-    fetchCategories()
-  }, [])
-
-  const categoryTree = buildCategoryTree(categories)
+  const imagesFor = (r) => [r.child?.image, r.sub?.image, r.main?.image, r.main?.banner].filter(Boolean)
+  const sel = 'px-3 py-2 text-sm rounded-lg bg-white border border-line text-fg focus:border-accent outline-none'
 
   return (
     <div className='p-6'>
-      <h1 className='text-3xl font-bold mb-8'>Categories Management</h1>
+      {/* Header */}
+      <div className='flex items-start justify-between mb-5'>
+        <div>
+          <h1 className='text-2xl font-heading font-extrabold text-fg'>Category Management</h1>
+          <p className='text-xs text-muted mt-1'>Dashboard <span className='text-faint'>›</span> Categories</p>
+        </div>
+        <div className='flex items-center gap-2'>
+          <button onClick={fetchTree} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'><RefreshCw size={15} /> Refresh</button>
+          <button onClick={() => navigate('/categories/add')} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-fg text-white hover:bg-fg/90'><Plus size={15} /> Add Category</button>
+        </div>
+      </div>
 
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-        {/* Add/Edit Form */}
-        <div className='glass border border-white/10 rounded-lg shadow-sm p-6'>
-          <h2 className='text-xl font-bold mb-6'>{isEditing ? 'Edit Category' : 'Add New Category'}</h2>
-          <form onSubmit={onSubmitHandler} className='space-y-4'>
-            <div>
-              <label className='block text-sm font-semibold mb-2'>Category Name</label>
-              <input
-                type='text'
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
-                placeholder='e.g., Men, Women, Kids'
-                required
-              />
-            </div>
-            <div>
-              <label className='block text-sm font-semibold mb-2'>Slug</label>
-              <input
-                type='text'
-                value={slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
-                placeholder='e.g., men, women, kids'
-                required
-              />
-            </div>
-            <div>
-              <label className='block text-sm font-semibold mb-2'>Parent Category (Optional)</label>
-              <select
-                value={parentCategory}
-                onChange={(e) => setParentCategory(e.target.value)}
-                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all'
-              >
-                <option value=''>None (Top Level)</option>
-                {categories.filter(cat => cat._id !== editId).map((cat) => (
-                  <option key={cat._id} value={cat._id}>
-                    {cat.level > 0 ? '—'.repeat(cat.level) + ' ' : ''}{cat.name}
-                  </option>
-                ))}
-              </select>
-              <p className='text-xs text-muted mt-1'>Select a parent to create a subcategory</p>
-            </div>
-            <div>
-              <label className='block text-sm font-semibold mb-2'>Description (Optional)</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className='w-full px-4 py-3 border border-white/10 rounded-lg focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none transition-all h-24'
-                placeholder='Category description...'
-              />
-            </div>
-            <div className='flex gap-3'>
-              <button
-                type='submit'
-                className='flex-1 bg-accent-gradient text-brand-deep py-3 font-semibold rounded-lg hover:brightness-110 transition-colors'
-              >
-                {isEditing ? 'Update' : 'Add'} Category
-              </button>
-              {isEditing && (
-                <button
-                  type='button'
-                  onClick={resetForm}
-                  className='px-6 bg-white/10 text-fg py-3 font-semibold rounded-lg hover:bg-gray-300 transition-colors'
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
+      <div className='glass rounded-2xl p-4'>
+        {/* Filters */}
+        <div className='flex flex-wrap items-center gap-3 mb-4'>
+          <div className='relative flex-1 min-w-[220px] max-w-sm'>
+            <Search size={15} className='absolute left-3 top-1/2 -translate-y-1/2 text-faint' />
+            <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} placeholder='Search category...' className='w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-white border border-line' />
+          </div>
+          <Select label='Category' value={fCat} onChange={setFCat} options={opts.cats} />
+          <Select label='Sub Category' value={fSub} onChange={setFSub} options={opts.subs} />
+          <Select label='Child Category' value={fChild} onChange={setFChild} options={opts.children} />
+          <Select label='Status' value={fStatus} onChange={setFStatus} options={['active', 'inactive']} labels={{ active: 'Enabled', inactive: 'Disabled' }} />
+          <button className='inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2 ml-auto self-end'><Filter size={15} /> Filter</button>
         </div>
 
-        {/* Categories List */}
-        <div className='lg:col-span-2 glass border border-white/10 rounded-lg shadow-sm p-6'>
-          <div className='flex items-center justify-between mb-6'>
-            <h2 className='text-xl font-bold'>All Categories ({categories.length})</h2>
-            <button
-              onClick={() => {
-                const allIds = categories.reduce((acc, cat) => ({ ...acc, [cat._id]: true }), {})
-                setExpandedCategories(allIds)
-              }}
-              className='text-sm text-muted hover:text-fg font-semibold'
-            >
-              Expand All
-            </button>
-          </div>
-          <div className='space-y-3'>
-            {categoryTree.length > 0 ? (
-              renderCategoryTree(categoryTree)
-            ) : (
-              <p className='text-center text-muted py-8'>No categories yet. Add your first category!</p>
-            )}
+        {/* Table */}
+        <div className='overflow-x-auto'>
+          <table className='w-full text-sm'>
+            <thead>
+              <tr className='text-left text-[11px] font-semibold uppercase tracking-wider text-muted border-b border-line'>
+                <th className='py-3 px-3'>S No.</th>
+                <th className='py-3 px-3'>Image</th>
+                <th className='py-3 px-3'>Category Name</th>
+                <th className='py-3 px-3'>Sub Category Name</th>
+                <th className='py-3 px-3'>Child Category Name</th>
+                <th className='py-3 px-3'>Status</th>
+                <th className='py-3 px-3'>Actions</th>
+                <th className='py-3 px-3 text-center'>View Detail</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? [0, 1, 2, 3].map((i) => <tr key={i}><td colSpan={8} className='py-2'><div className='skeleton h-12 rounded-lg' /></td></tr>) :
+                pageRows.length === 0 ? <tr><td colSpan={8} className='py-10 text-center text-muted'>No categories found.</td></tr> :
+                  pageRows.map((r, i) => {
+                    const imgs = imagesFor(r); const leaf = r.child || r.sub || r.main
+                    return (
+                      <tr key={i} className='border-b border-line/70 hover:bg-surface-2/50'>
+                        <td className='py-3 px-3 text-muted'>{(page - 1) * perPage + i + 1}</td>
+                        <td className='py-3 px-3'>
+                          <div className='flex items-center gap-1'>
+                            {(imgs.length ? imgs : [PLACEHOLDER]).slice(0, 3).map((src, k) => <img key={k} src={src} alt='' className='w-9 h-9 rounded-lg object-cover border border-line' />)}
+                            {imgs.length > 3 && <span className='ml-1 px-1.5 py-1 rounded-lg bg-fg text-white text-[10px] font-bold'>+{imgs.length - 3}</span>}
+                          </div>
+                        </td>
+                        <td className='py-3 px-3'><p className='font-semibold text-fg'>{r.main?.name || '—'}</p><p className='text-[11px] text-muted'>( ID: {r.main?.code || '—'} )</p></td>
+                        <td className='py-3 px-3'><p className='text-fg'>{r.sub?.name || '—'}</p>{r.sub && <p className='text-[11px] text-muted'>( ID: {r.sub.code} )</p>}</td>
+                        <td className='py-3 px-3'><p className='text-fg'>{r.child?.name || '—'}</p>{r.child && <p className='text-[11px] text-muted'>( ID: {r.child.code} )</p>}</td>
+                        <td className='py-3 px-3'>
+                          <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${(leaf?.status || 'active') === 'active' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                            {(leaf?.status || 'active') === 'active' ? 'Enabled' : 'Disabled'}
+                          </span>
+                        </td>
+                        <td className='py-3 px-3'>
+                          <div className='flex items-center gap-1.5'>
+                            <button onClick={() => navigate('/categories/add?edit=' + r.main._id)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent hover:border-accent/50'><Pencil size={14} /></button>
+                            <button onClick={() => remove(leaf)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-danger hover:border-danger/50'><Trash2 size={14} /></button>
+                            <button onClick={() => toggleStatus(leaf)} title='Toggle status' className={`relative w-10 h-5 rounded-full transition-colors ${(leaf?.status || 'active') === 'active' ? 'bg-fg' : 'bg-line'}`}>
+                              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${(leaf?.status || 'active') === 'active' ? 'left-[22px]' : 'left-0.5'}`} />
+                            </button>
+                          </div>
+                        </td>
+                        <td className='py-3 px-3 text-center'>
+                          <button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent hover:border-accent/50 mx-auto'><Eye size={14} /></button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className='flex items-center justify-between mt-4 text-sm'>
+          <span className='text-muted'>Showing {filtered.length === 0 ? 0 : (page - 1) * perPage + 1} to {Math.min(page * perPage, filtered.length)} of {filtered.length} entries</span>
+          <div className='flex items-center gap-1'>
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className='w-8 h-8 rounded-lg border border-line text-muted disabled:opacity-40 hover:bg-surface-2'>←</button>
+            {Array.from({ length: pages }, (_, i) => i + 1).slice(0, 4).map((p) => (
+              <button key={p} onClick={() => setPage(p)} className={`w-8 h-8 rounded-lg text-sm font-semibold ${p === page ? 'bg-fg text-white' : 'border border-line text-muted hover:bg-surface-2'}`}>{p}</button>
+            ))}
+            <button onClick={() => setPage((p) => Math.min(pages, p + 1))} disabled={page === pages} className='w-8 h-8 rounded-lg border border-line text-muted disabled:opacity-40 hover:bg-surface-2'>→</button>
           </div>
         </div>
       </div>
     </div>
   )
 }
+
+const Select = ({ label, value, onChange, options, labels }) => (
+  <div>
+    <label className='block text-[11px] font-semibold text-muted mb-1'>{label}</label>
+    <select value={value} onChange={(e) => onChange(e.target.value)} className='px-3 py-2 text-sm rounded-lg bg-white border border-line text-fg focus:border-accent outline-none min-w-[130px]'>
+      <option value='All'>All</option>
+      {options.map((o) => <option key={o} value={o}>{labels?.[o] || o}</option>)}
+    </select>
+  </div>
+)
 
 export default Categories

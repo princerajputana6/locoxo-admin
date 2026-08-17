@@ -173,7 +173,7 @@ const ExpressionCalc = () => {
             if (k === '=') {
               return (
                 <button key={k} onClick={equals}
-                  className='py-3.5 rounded-xl bg-accent-gradient text-brand-deep font-bold shadow-glow hover:brightness-110 transition-all inline-flex items-center justify-center'>
+                  className='py-3.5 rounded-xl bg-accent-gradient text-white font-bold shadow-glow hover:brightness-110 transition-all inline-flex items-center justify-center'>
                   <Equal size={18} />
                 </button>
               )
@@ -391,7 +391,7 @@ const GstCalc = () => {
           {[0, 5, 12, 18, 28].map((rr) => (
             <button key={rr} onClick={() => setRate(String(rr))}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                Number(rate) === rr ? 'bg-accent-gradient text-brand-deep border-transparent shadow-glow' : 'bg-surface-2 text-muted border-line hover:text-fg'
+                Number(rate) === rr ? 'bg-accent-gradient text-white border-transparent shadow-glow' : 'bg-surface-2 text-muted border-line hover:text-fg'
               }`}>{rr}%</button>
           ))}
         </div>
@@ -432,7 +432,7 @@ const DiscountCalc = () => {
           {[10, 15, 20, 25, 30, 50].map((dd) => (
             <button key={dd} onClick={() => setDiscount(String(dd))}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                Number(discount) === dd ? 'bg-accent-gradient text-brand-deep border-transparent shadow-glow' : 'bg-surface-2 text-muted border-line hover:text-fg'
+                Number(discount) === dd ? 'bg-accent-gradient text-white border-transparent shadow-glow' : 'bg-surface-2 text-muted border-line hover:text-fg'
               }`}>{dd}%</button>
           ))}
         </div>
