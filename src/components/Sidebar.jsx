@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Users, Boxes,
   TicketPercent, Image, RotateCcw, Megaphone, Crown, Sparkles,
-  BarChart3, TrendingUp, LifeBuoy, ChevronLeft, ChevronDown, Calculator, LayoutGrid, Star,
+  BarChart3, TrendingUp, LifeBuoy, ChevronLeft, ChevronDown, Calculator, LayoutGrid, Star, ShieldCheck,
 } from 'lucide-react'
 
 const groups = [
@@ -50,7 +50,14 @@ const groups = [
       { to: '/calculator', label: 'Calculator', icon: Calculator },
       { to: '/coupons', label: 'Coupons', icon: TicketPercent },
       { to: '/banners', label: 'Banners', icon: Image },
-      { to: '/returns', label: 'Returns', icon: RotateCcw },
+      {
+        to: '/returns', label: 'Returns & Refunds', icon: RotateCcw, children: [
+          { to: '/returns', label: 'All Requests', end: true },
+          { to: '/returns?type=return', label: 'Returns' },
+          { to: '/returns?type=exchange', label: 'Exchanges' },
+          { to: '/returns?type=refund', label: 'Refunds' },
+        ],
+      },
       { to: '/influencers', label: 'Influencers', icon: TrendingUp },
       { to: '/reviews', label: 'Reviews', icon: Star },
       { to: '/tickets', label: 'Tickets', icon: LifeBuoy },
@@ -62,6 +69,7 @@ const groups = [
       { to: '/marketing', label: 'Marketing', icon: Megaphone },
       { to: '/membership', label: 'Membership', icon: Crown },
       { to: '/ai-insights', label: 'AI Insights', icon: Sparkles },
+      { to: '/admin-management', label: 'Admin Management', icon: ShieldCheck },
     ],
   },
   {

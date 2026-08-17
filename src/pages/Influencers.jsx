@@ -1,506 +1,152 @@
-import axios from 'axios'
 import React, { useEffect, useState } from 'react'
+import axios from 'axios'
 import { backendUrl, currency } from '../App'
 import { toast } from 'react-toastify'
-import { Trash2, Edit, TrendingUp, Users, DollarSign, MousePointer } from 'lucide-react'
+import {
+  Users, UserCheck, UserX, IndianRupee, TrendingUp, FileSpreadsheet, Plus, Search,
+  Filter, Copy, Eye, Pencil, MoreVertical, X, Camera, Eye as EyeIcon, EyeOff,
+} from 'lucide-react'
+
+const TYPE_PILL = { barter: 'bg-success/10 text-success', unpaid: 'bg-accent/10 text-accent', paid: 'bg-violet/10 text-violet', collab: 'bg-amber/10 text-amber', other: 'bg-muted/10 text-muted' }
+const STATUS_PILL = { active: 'bg-success/10 text-success', suspended: 'bg-danger/10 text-danger', deactivated: 'bg-muted/10 text-muted', inactive: 'bg-muted/10 text-muted' }
+
+const StatCard = ({ icon: Icon, label, value, sub, tone }) => {
+  const tones = { blue: 'bg-accent/10 text-accent', green: 'bg-success/10 text-success', red: 'bg-danger/10 text-danger', violet: 'bg-violet/10 text-violet', amber: 'bg-amber/10 text-amber' }
+  return <div className='glass rounded-2xl p-4 flex items-center gap-3'><span className={`grid place-items-center w-12 h-12 rounded-xl ${tones[tone]}`}><Icon size={20} /></span><div><p className='text-xs text-muted'>{label}</p><p className='text-2xl font-heading font-extrabold text-fg'>{value}</p><p className='text-[11px] text-faint'>{sub}</p></div></div>
+}
 
 const Influencers = ({ token }) => {
-  const [influencers, setInfluencers] = useState([])
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [showEditForm, setShowEditForm] = useState(false)
-  const [editingInfluencer, setEditingInfluencer] = useState(null)
-  const [products, setProducts] = useState([])
-  
-  // Form states
-  const [image, setImage] = useState(false)
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [phone, setPhone] = useState("")
-  const [instagramHandle, setInstagramHandle] = useState("")
-  const [productId, setProductId] = useState("")
-  const [commissionRate, setCommissionRate] = useState("10")
+  const [rows, setRows] = useState([]); const [summary, setSummary] = useState(null); const [loading, setLoading] = useState(true)
+  const [q, setQ] = useState(''); const [fStatus, setFStatus] = useState('All'); const [fType, setFType] = useState('All')
+  const [showAdd, setShowAdd] = useState(false)
 
-  const fetchInfluencers = async () => {
-    try {
-      const response = await axios.get(backendUrl + '/api/influencer/list', { headers: { token } })
-      if (response.data.success) {
-        setInfluencers(response.data.influencers)
-      } else {
-        toast.error(response.data.message)
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(error.message)
-    }
+  const load = async () => {
+    setLoading(true)
+    try { const params = new URLSearchParams({ status: fStatus, type: fType, search: q }).toString(); const { data } = await axios.get(`${backendUrl}/api/influencer/list?${params}`, { headers: { token } }); if (data.success) { setRows(data.influencers); setSummary(data.summary) } else toast.error(data.message) }
+    catch (err) { toast.error(err.response?.data?.message || 'Failed to load influencers') } finally { setLoading(false) }
   }
+  useEffect(() => { load() }, [fStatus, fType])
+  useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t) }, [q])
 
-  const fetchProducts = async () => {
-    try {
-      const response = await axios.get(backendUrl + '/api/product/list')
-      if (response.data.success) {
-        setProducts(response.data.products)
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  const deleteInfluencer = async (id) => {
-    try {
-      const response = await axios.delete(backendUrl + `/api/influencer/${id}`, { headers: { token } })
-      if (response.data.success) {
-        toast.success(response.data.message)
-        await fetchInfluencers()
-      } else {
-        toast.error(response.data.message)
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(error.message)
-    }
-  }
-
-  const toggleStatus = async (id, currentStatus) => {
-    try {
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
-      const response = await axios.put(
-        backendUrl + `/api/influencer/${id}`,
-        { status: newStatus },
-        { headers: { token } }
-      )
-      if (response.data.success) {
-        toast.success('Status updated successfully')
-        await fetchInfluencers()
-      } else {
-        toast.error(response.data.message)
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(error.message)
-    }
-  }
-
-  const handleAddInfluencer = async (e) => {
-    e.preventDefault()
-
-    try {
-      const formData = new FormData()
-      formData.append('name', name)
-      formData.append('email', email)
-      formData.append('password', password)
-      formData.append('phone', phone)
-      formData.append('instagramHandle', instagramHandle)
-      formData.append('productId', productId)
-      formData.append('commissionRate', commissionRate)
-      if (image) formData.append('image', image)
-
-      const response = await axios.post(backendUrl + '/api/influencer/add', formData, { headers: { token } })
-
-      if (response.data.success) {
-        toast.success('Influencer added successfully')
-        resetForm()
-        setShowAddForm(false)
-        await fetchInfluencers()
-      } else {
-        toast.error(response.data.message)
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(error.message)
-    }
-  }
-
-  const handleEditInfluencer = async (e) => {
-    e.preventDefault()
-
-    try {
-      const response = await axios.put(
-        backendUrl + `/api/influencer/${editingInfluencer._id}`,
-        {
-          name,
-          email,
-          phone,
-          instagramHandle,
-          productId,
-          commissionRate
-        },
-        { headers: { token } }
-      )
-
-      if (response.data.success) {
-        toast.success('Influencer updated successfully')
-        resetForm()
-        setShowEditForm(false)
-        setEditingInfluencer(null)
-        await fetchInfluencers()
-      } else {
-        toast.error(response.data.message)
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(error.message)
-    }
-  }
-
-  const openEditForm = (influencer) => {
-    setEditingInfluencer(influencer)
-    setName(influencer.name)
-    setEmail(influencer.email)
-    setPhone(influencer.phone || '')
-    setInstagramHandle(influencer.instagramHandle || '')
-    setProductId(influencer.productId._id)
-    setCommissionRate(influencer.commissionRate.toString())
-    setShowEditForm(true)
-  }
-
-  const resetForm = () => {
-    setImage(false)
-    setName('')
-    setEmail('')
-    setPassword('')
-    setPhone('')
-    setInstagramHandle('')
-    setProductId('')
-    setCommissionRate('10')
-  }
-
-  useEffect(() => {
-    fetchInfluencers()
-    fetchProducts()
-  }, [])
+  const setStatus = async (id, status) => { try { await axios.put(`${backendUrl}/api/influencer/${id}`, { status }, { headers: { token } }); load() } catch { toast.error('Failed') } }
+  const sel = 'px-3 py-2.5 text-sm rounded-xl bg-white border border-line text-fg focus:border-accent outline-none'
 
   return (
-    <div className='p-4 sm:p-10 w-full'>
-      <div className='flex justify-between items-center mb-6'>
-        <h1 className='text-3xl font-bold'>Influencer Management</h1>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className='bg-accent-gradient text-white px-6 py-2 rounded hover:brightness-110 transition-colors'
-        >
-          {showAddForm ? 'Cancel' : '+ Add Influencer'}
-        </button>
+    <div className='p-6'>
+      <div className='flex items-start justify-between mb-5'>
+        <div><h1 className='text-2xl font-heading font-extrabold text-fg'>Influencer Management</h1><p className='text-sm text-muted'>Manage influencers, commission, codes and performance.</p></div>
+        <div className='flex items-center gap-2'>
+          <button className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
+          <button onClick={() => setShowAdd(true)} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'><Plus size={15} /> Add Influencer</button>
+        </div>
       </div>
 
-      {/* Add Influencer Form */}
-      {showAddForm && (
-        <div className='glass p-6 rounded-lg shadow-md mb-6'>
-          <h2 className='text-xl font-bold mb-4'>Add New Influencer</h2>
-          <form onSubmit={handleAddInfluencer} className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <div>
-              <label className='block text-sm font-medium mb-2'>Influencer Photo *</label>
-              <input
-                onChange={(e) => setImage(e.target.files[0])}
-                type='file'
-                accept='image/*'
-                required
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
+      <div className='grid grid-cols-2 md:grid-cols-5 gap-3 mb-5'>
+        <StatCard icon={Users} label='Total Influencers' value={summary?.total ?? '—'} sub='all time' tone='blue' />
+        <StatCard icon={UserCheck} label='Active Influencers' value={summary?.active ?? '—'} sub='active now' tone='green' />
+        <StatCard icon={UserX} label='Deactivated' value={summary?.deactivated ?? '—'} sub='inactive' tone='red' />
+        <StatCard icon={IndianRupee} label='Total Revenue' value={`${currency}${(summary?.totalRevenue || 0).toLocaleString('en-IN')}`} sub='From all influencers' tone='violet' />
+        <StatCard icon={TrendingUp} label='Total Sales' value={summary?.totalSales ?? '—'} sub='From all influencers' tone='amber' />
+      </div>
 
-            <div>
-              <label className='block text-sm font-medium mb-2'>Full Name *</label>
-              <input
-                onChange={(e) => setName(e.target.value)}
-                value={name}
-                type='text'
-                placeholder='John Doe'
-                required
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Email *</label>
-              <input
-                onChange={(e) => setEmail(e.target.value)}
-                value={email}
-                type='email'
-                placeholder='influencer@example.com'
-                required
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Password *</label>
-              <input
-                onChange={(e) => setPassword(e.target.value)}
-                value={password}
-                type='password'
-                placeholder='Enter password for influencer login'
-                required
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-              <p className='text-xs text-muted mt-1'>Influencer will use this to login</p>
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Phone</label>
-              <input
-                onChange={(e) => setPhone(e.target.value)}
-                value={phone}
-                type='tel'
-                placeholder='+91 9876543210'
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Instagram Handle</label>
-              <input
-                onChange={(e) => setInstagramHandle(e.target.value)}
-                value={instagramHandle}
-                type='text'
-                placeholder='@username'
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Product *</label>
-              <select
-                onChange={(e) => setProductId(e.target.value)}
-                value={productId}
-                required
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              >
-                <option value=''>Select Product</option>
-                {products.map((product) => (
-                  <option key={product._id} value={product._id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Commission Rate (%)</label>
-              <input
-                onChange={(e) => setCommissionRate(e.target.value)}
-                value={commissionRate}
-                type='number'
-                min='0'
-                max='100'
-                placeholder='10'
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
-
-            <div className='md:col-span-2'>
-              <button
-                type='submit'
-                className='bg-accent-gradient text-white px-8 py-2 rounded hover:brightness-110 transition-colors'
-              >
-                Add Influencer
-              </button>
-            </div>
-          </form>
+      <div className='glass rounded-2xl p-5'>
+        <div className='flex flex-wrap items-center gap-3 mb-4'>
+          <div className='relative flex-1 min-w-[220px]'><Search size={15} className='absolute left-3 top-1/2 -translate-y-1/2 text-faint' /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder='Search by name, email or code…' className='w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-white border border-line' /></div>
+          <select value={fStatus} onChange={(e) => setFStatus(e.target.value)} className={sel}><option value='All'>Status: All</option>{['active', 'suspended', 'deactivated'].map((s) => <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>)}</select>
+          <select value={fType} onChange={(e) => setFType(e.target.value)} className={sel}><option value='All'>Type: All</option>{['barter', 'unpaid', 'paid', 'collab', 'other'].map((t) => <option key={t} value={t}>{t[0].toUpperCase() + t.slice(1)}</option>)}</select>
+          <button className='inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg'><Filter size={15} /> Filter</button>
         </div>
-      )}
 
-      {/* Edit Influencer Form */}
-      {showEditForm && (
-        <div className='glass p-6 rounded-lg shadow-md mb-6'>
-          <h2 className='text-xl font-bold mb-4'>Edit Influencer</h2>
-          <form onSubmit={handleEditInfluencer} className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <div>
-              <label className='block text-sm font-medium mb-2'>Full Name *</label>
-              <input
-                onChange={(e) => setName(e.target.value)}
-                value={name}
-                type='text'
-                required
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Email *</label>
-              <input
-                onChange={(e) => setEmail(e.target.value)}
-                value={email}
-                type='email'
-                required
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Phone</label>
-              <input
-                onChange={(e) => setPhone(e.target.value)}
-                value={phone}
-                type='tel'
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Instagram Handle</label>
-              <input
-                onChange={(e) => setInstagramHandle(e.target.value)}
-                value={instagramHandle}
-                type='text'
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Product *</label>
-              <select
-                onChange={(e) => setProductId(e.target.value)}
-                value={productId}
-                required
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              >
-                <option value=''>Select Product</option>
-                {products.map((product) => (
-                  <option key={product._id} value={product._id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium mb-2'>Commission Rate (%)</label>
-              <input
-                onChange={(e) => setCommissionRate(e.target.value)}
-                value={commissionRate}
-                type='number'
-                min='0'
-                max='100'
-                className='w-full border border-white/10 px-3 py-2 rounded'
-              />
-            </div>
-
-            <div className='md:col-span-2 flex gap-3'>
-              <button
-                type='submit'
-                className='bg-accent-gradient text-white px-8 py-2 rounded hover:brightness-110 transition-colors'
-              >
-                Update Influencer
-              </button>
-              <button
-                type='button'
-                onClick={() => {
-                  setShowEditForm(false)
-                  setEditingInfluencer(null)
-                  resetForm()
-                }}
-                className='bg-gray-300 text-fg px-8 py-2 rounded hover:bg-gray-400 transition-colors'
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Influencers List */}
-      <div className='glass rounded-lg shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
-          <table className='w-full'>
-            <thead className='bg-white/5 border-b'>
-              <tr>
-                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Image</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Name</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Instagram</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Product</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Stats</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Commission</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Status</th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-muted uppercase'>Actions</th>
-              </tr>
-            </thead>
-            <tbody className='divide-y divide-white/10'>
-              {influencers.map((influencer) => (
-                <tr key={influencer._id} className='hover:bg-white/5'>
-                  <td className='px-6 py-4'>
-                    <img
-                      src={influencer.image}
-                      alt={influencer.name}
-                      className='w-16 h-16 object-cover rounded-lg'
-                    />
-                  </td>
-                  <td className='px-6 py-4'>
-                    <div>
-                      <p className='font-medium'>{influencer.name}</p>
-                      <p className='text-sm text-muted'>{influencer.email}</p>
-                    </div>
-                  </td>
-                  <td className='px-6 py-4 text-sm'>{influencer.instagramHandle || '-'}</td>
-                  <td className='px-6 py-4'>
-                    <div>
-                      <p className='font-medium text-sm'>{influencer.productId?.name}</p>
-                      <p className='text-xs text-muted'>{currency}{influencer.productId?.price}</p>
-                    </div>
-                  </td>
-                  <td className='px-6 py-4'>
-                    <div className='space-y-1 text-xs'>
-                      <div className='flex items-center gap-1'>
-                        <MousePointer size={12} className='text-blue-500' />
-                        <span>{influencer.clicks} clicks</span>
-                      </div>
-                      <div className='flex items-center gap-1'>
-                        <Users size={12} className='text-green-500' />
-                        <span>{influencer.conversions} sales</span>
-                      </div>
-                      <div className='flex items-center gap-1'>
-                        <DollarSign size={12} className='text-purple-500' />
-                        <span>{currency}{influencer.totalEarnings.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className='px-6 py-4 text-sm font-medium'>{influencer.commissionRate}%</td>
-                  <td className='px-6 py-4'>
-                    <button
-                      onClick={() => toggleStatus(influencer._id, influencer.status)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        influencer.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {influencer.status}
-                    </button>
-                  </td>
-                  <td className='px-6 py-4'>
-                    <div className='flex gap-2'>
-                      <button
-                        onClick={() => openEditForm(influencer)}
-                        className='p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors'
-                        title='Edit'
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this influencer?')) {
-                            deleteInfluencer(influencer._id)
-                          }
-                        }}
-                        className='p-2 text-red-600 hover:bg-red-50 rounded transition-colors'
-                        title='Delete'
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+          <table className='w-full text-sm'>
+            <thead><tr className='text-left text-[11px] font-semibold uppercase tracking-wider text-muted border-b border-line'>
+              <th className='py-3 px-2'>Influencer</th><th className='py-3 px-2'>Code</th><th className='py-3 px-2'>Type</th><th className='py-3 px-2'>Commission</th><th className='py-3 px-2'>Sales</th><th className='py-3 px-2'>Link Clicks</th><th className='py-3 px-2'>Revenue</th><th className='py-3 px-2'>Joined On</th><th className='py-3 px-2'>Status</th><th className='py-3 px-2'>Action</th>
+            </tr></thead>
+            <tbody>
+              {loading ? [0, 1, 2].map((i) => <tr key={i}><td colSpan={10} className='py-2'><div className='skeleton h-12 rounded-lg' /></td></tr>) :
+                rows.length === 0 ? <tr><td colSpan={10} className='py-10 text-center text-muted'>No influencers found.</td></tr> :
+                  rows.map((r) => (
+                    <tr key={r._id} className='border-b border-line/70 hover:bg-surface-2/50'>
+                      <td className='py-3 px-2'><div className='flex items-center gap-2'>{r.image ? <img src={r.image} alt='' className='w-9 h-9 rounded-full object-cover' /> : <span className='w-9 h-9 rounded-full bg-accent/15 text-accent grid place-items-center font-bold'>{r.name[0]}</span>}<div><p className='font-semibold text-fg'>{r.name}</p><p className='text-[11px] text-muted'>{r.email}</p><p className='text-[11px] text-faint'>{r.phone}</p></div></div></td>
+                      <td className='py-3 px-2'><span className='inline-flex items-center gap-1 px-2 py-1 rounded-md bg-surface-2 border border-line text-xs font-mono font-semibold text-fg'>{r.referralCode}<button onClick={() => { navigator.clipboard?.writeText(r.referralCode); toast.success('Copied') }}><Copy size={11} className='text-muted' /></button></span></td>
+                      <td className='py-3 px-2'><span className={`px-2 py-1 rounded-md text-[11px] font-semibold ${TYPE_PILL[r.type] || TYPE_PILL.other}`}>{(r.type || 'other')[0].toUpperCase() + (r.type || 'other').slice(1)}</span></td>
+                      <td className='py-3 px-2 text-xs'><p className='text-fg font-semibold'>{r.commissionType === 'amount' ? `${currency}${r.commissionAmount}` : `${r.commissionRate}%`}</p><p className='text-muted'>{r.commissionType === 'amount' ? 'per order' : `or ${currency}${r.commissionAmount || 0} per order`}</p></td>
+                      <td className='py-3 px-2 text-fg'>{r.conversions || 0}</td>
+                      <td className='py-3 px-2 text-fg'>{(r.clicks || 0).toLocaleString('en-IN')}</td>
+                      <td className='py-3 px-2 text-fg'>{currency}{(r.totalEarnings || 0).toLocaleString('en-IN')}</td>
+                      <td className='py-3 px-2 text-muted text-xs'>{new Date(r.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                      <td className='py-3 px-2'><select value={r.status} onChange={(e) => setStatus(r._id, e.target.value)} className={`px-2 py-1 rounded-md text-[11px] font-semibold border-0 outline-none ${STATUS_PILL[r.status] || STATUS_PILL.inactive}`}>{['active', 'suspended', 'deactivated'].map((s) => <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>)}</select></td>
+                      <td className='py-3 px-2'><div className='flex gap-1'><button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent'><Eye size={14} /></button><button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent'><Pencil size={14} /></button><button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted'><MoreVertical size={14} /></button></div></td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>
+      </div>
 
-        {influencers.length === 0 && (
-          <div className='text-center py-12'>
-            <TrendingUp size={48} className='mx-auto text-gray-300 mb-4' />
-            <p className='text-muted text-lg'>No influencers added yet</p>
-            <p className='text-faint text-sm mt-2'>Click "Add Influencer" to get started</p>
+      {showAdd && <AddDrawer token={token} onClose={() => setShowAdd(false)} onDone={() => { setShowAdd(false); load() }} />}
+    </div>
+  )
+}
+
+const AddDrawer = ({ token, onClose, onDone }) => {
+  const [f, setF] = useState({ name: '', email: '', phone: '', dob: '', instagramHandle: '', code: '', type: '', password: '', sameCommissionForAll: true, commissionType: 'percentage', commissionRate: '10', commissionAmount: '', address: '', notes: '', status: 'active' })
+  const [photo, setPhoto] = useState(null); const [showPass, setShowPass] = useState(false); const [busy, setBusy] = useState(false)
+  const set = (k, v) => setF((x) => ({ ...x, [k]: v }))
+  const lbl = 'block text-xs font-semibold text-fg mb-1'; const inp = 'w-full px-3 py-2 text-sm rounded-lg bg-white border border-line focus:border-accent outline-none'
+
+  const genCode = () => set('code', (f.name || 'INF').replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 5) + Math.floor(10 + Math.random() * 90))
+  const submit = async () => {
+    if (!f.name.trim() || !f.email.trim()) return toast.error('Name and email are required')
+    setBusy(true)
+    try {
+      const fd = new FormData()
+      Object.entries(f).forEach(([k, v]) => fd.append(k, v))
+      if (photo) fd.append('image', photo)
+      const { data } = await axios.post(`${backendUrl}/api/influencer/add`, fd, { headers: { token } })
+      if (data.success) { toast.success('Influencer added'); onDone() } else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || err.message) } finally { setBusy(false) }
+  }
+
+  return (
+    <div className='fixed inset-0 z-50 flex justify-end'>
+      <div className='fixed inset-0 bg-black/30' onClick={onClose} />
+      <div className='relative w-full max-w-md bg-white h-full shadow-2xl overflow-y-auto'>
+        <div className='flex items-center justify-between px-5 py-4 border-b border-line sticky top-0 bg-white z-10'><p className='font-heading font-bold text-fg'>Add Influencer</p><button onClick={onClose} className='grid place-items-center w-8 h-8 rounded-lg text-muted hover:bg-surface-2'><X size={16} /></button></div>
+        <div className='p-5 space-y-5'>
+          <div>
+            <p className='text-sm font-bold text-fg mb-3'>Personal Information</p>
+            <div className='grid grid-cols-[auto_1fr] gap-3 items-start'>
+              <label className='w-20 h-20 rounded-xl border-2 border-dashed border-line grid place-items-center cursor-pointer overflow-hidden bg-surface-2'>{photo ? <img src={URL.createObjectURL(photo)} alt='' className='w-full h-full object-cover' /> : <div className='text-center text-faint'><Camera size={18} className='mx-auto' /><span className='text-[9px]'>Upload</span></div>}<input type='file' accept='image/*' hidden onChange={(e) => setPhoto(e.target.files?.[0] || null)} /></label>
+              <div className='space-y-2'><div><label className={lbl}>Full Name *</label><input value={f.name} onChange={(e) => set('name', e.target.value)} className={inp} placeholder='Enter full name' /></div><div><label className={lbl}>Email Address *</label><input value={f.email} onChange={(e) => set('email', e.target.value)} className={inp} placeholder='Enter email' /></div></div>
+            </div>
+            <div className='grid grid-cols-2 gap-2 mt-2'><div><label className={lbl}>Mobile Number *</label><input value={f.phone} onChange={(e) => set('phone', e.target.value)} className={inp} placeholder='+91…' /></div><div><label className={lbl}>Date of Birth *</label><input type='date' value={f.dob} onChange={(e) => set('dob', e.target.value)} className={inp} /></div></div>
+            <div className='mt-2'><label className={lbl}>Instagram Handle *</label><input value={f.instagramHandle} onChange={(e) => set('instagramHandle', e.target.value)} className={inp} placeholder='@username' /></div>
           </div>
-        )}
+
+          <div>
+            <p className='text-sm font-bold text-fg mb-3'>Influencer Details</p>
+            <div className='grid grid-cols-2 gap-2'>
+              <div><label className={lbl}>Influencer Code *</label><div className='flex gap-1'><input value={f.code} onChange={(e) => set('code', e.target.value)} className={inp} placeholder='Enter code' /><button onClick={genCode} className='px-2 py-1 text-[11px] font-semibold rounded-lg bg-accent text-white whitespace-nowrap'>Generate</button></div></div>
+              <div><label className={lbl}>Type *</label><select value={f.type} onChange={(e) => set('type', e.target.value)} className={inp}><option value=''>Select type</option>{['barter', 'unpaid', 'paid', 'collab', 'other'].map((t) => <option key={t} value={t}>{t[0].toUpperCase() + t.slice(1)}</option>)}</select></div>
+            </div>
+            <div className='mt-2'><label className={lbl}>Password *</label><div className='relative'><input type={showPass ? 'text' : 'password'} value={f.password} onChange={(e) => set('password', e.target.value)} className={inp} placeholder='Enter password' /><button onClick={() => setShowPass(!showPass)} className='absolute right-2 top-1/2 -translate-y-1/2 text-muted'>{showPass ? <EyeOff size={15} /> : <EyeIcon size={15} />}</button></div></div>
+          </div>
+
+          <div>
+            <p className='text-sm font-bold text-fg mb-3'>Commission Settings</p>
+            <div className='flex gap-3 text-xs mb-2'><label className='flex items-center gap-1'><input type='radio' checked={f.sameCommissionForAll} onChange={() => set('sameCommissionForAll', true)} className='accent-accent' /> Same for all</label><label className='flex items-center gap-1'><input type='radio' checked={!f.sameCommissionForAll} onChange={() => set('sameCommissionForAll', false)} className='accent-accent' /> Different per product</label></div>
+            <div className='grid grid-cols-2 gap-2'><div><label className={lbl}>Commission Type *</label><select value={f.commissionType} onChange={(e) => set('commissionType', e.target.value)} className={inp}><option value='percentage'>Percentage (%)</option><option value='amount'>Flat Amount</option></select></div><div><label className={lbl}>Rate / Amount *</label><input value={f.commissionType === 'amount' ? f.commissionAmount : f.commissionRate} onChange={(e) => set(f.commissionType === 'amount' ? 'commissionAmount' : 'commissionRate', e.target.value)} className={inp} placeholder='Ex: 10 or 500' /></div></div>
+          </div>
+
+          <div>
+            <p className='text-sm font-bold text-fg mb-3'>Other Information</p>
+            <div><label className={lbl}>Address</label><input value={f.address} onChange={(e) => set('address', e.target.value)} className={inp} placeholder='Enter address' /></div>
+            <div className='mt-2'><label className={lbl}>Notes (Optional)</label><textarea value={f.notes} onChange={(e) => set('notes', e.target.value)} className={inp + ' h-16 resize-none'} placeholder='Enter notes' /></div>
+            <div className='mt-2 flex gap-3 text-xs'><label className='flex items-center gap-1'><input type='radio' checked={f.status === 'active'} onChange={() => set('status', 'active')} className='accent-accent' /> Active</label><label className='flex items-center gap-1'><input type='radio' checked={f.status === 'deactivated'} onChange={() => set('status', 'deactivated')} className='accent-accent' /> Deactivated</label></div>
+          </div>
+        </div>
+        <div className='flex items-center gap-2 px-5 py-4 border-t border-line sticky bottom-0 bg-white'><button onClick={onClose} className='flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'>Cancel</button><button onClick={submit} disabled={busy} className='flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'>{busy ? 'Saving…' : 'Save Influencer'}</button></div>
       </div>
     </div>
   )

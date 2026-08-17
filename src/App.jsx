@@ -28,6 +28,7 @@ import Influencers from './pages/Influencers'
 import InfluencerDashboard from './pages/InfluencerDashboard'
 import Tickets from './pages/Tickets'
 import Reviews from './pages/Reviews'
+import AdminManagement from './pages/AdminManagement'
 import MembershipPlans from './pages/MembershipPlans'
 import Marketing from './pages/Marketing'
 import Merchandising from './pages/Merchandising'
@@ -110,6 +111,7 @@ const App = () => {
                   <Route path='/influencers' element={<Influencers token={token} />} />
                   <Route path='/tickets' element={<Tickets token={token} />} />
                   <Route path='/reviews' element={<Reviews token={token} />} />
+                  <Route path='/admin-management' element={<AdminManagement token={token} />} />
                   <Route path='/membership' element={<MembershipPlans token={token} />} />
                   <Route path='/marketing' element={<Marketing token={token} />} />
                   <Route path='/ai-insights' element={<AIInsights token={token} />} />
