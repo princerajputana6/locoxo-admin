@@ -30,7 +30,7 @@ const Inventory = ({ token }) => {
     setLoading(true)
     try {
       const [p, s] = await Promise.all([
-        axios.get(backendUrl + '/api/product/list'),
+        axios.get(backendUrl + '/api/product/list?all=true'),
         axios.get(backendUrl + '/api/inventory/summary', { headers: { token } }),
       ])
       if (p.data.success) setProducts(p.data.products)

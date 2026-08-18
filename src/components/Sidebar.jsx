@@ -48,7 +48,14 @@ const groups = [
         ],
       },
       { to: '/calculator', label: 'Calculator', icon: Calculator },
-      { to: '/coupons', label: 'Coupons', icon: TicketPercent },
+      {
+        to: '/coupons', label: 'Coupons / Promos', icon: TicketPercent, children: [
+          { to: '/coupons', label: 'All Coupons', end: true },
+          { to: '/coupons', label: 'Add Coupon' },
+          { to: '/coupons', label: 'Promo Codes' },
+          { to: '/coupons', label: 'Influencer Promo Codes' },
+        ],
+      },
       { to: '/banners', label: 'Banners', icon: Image },
       {
         to: '/returns', label: 'Returns & Refunds', icon: RotateCcw, children: [

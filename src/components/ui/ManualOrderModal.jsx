@@ -20,7 +20,7 @@ const ManualOrderModal = ({ open, onClose, token, onDone }) => {
 
   useEffect(() => {
     if (!open) return
-    axios.get(backendUrl + '/api/product/list').then(({ data }) => data.success && setProducts(data.products)).catch(() => {})
+    axios.get(backendUrl + '/api/product/list?all=true').then(({ data }) => data.success && setProducts(data.products)).catch(() => {})
   }, [open])
 
   const pickProduct = (i, pid) => {

@@ -24,7 +24,7 @@ const CreateBarcode = ({ token }) => {
   const [qty, setQty] = useState('All (Upto Stock)')
   const [recent, setRecent] = useState(() => { try { return JSON.parse(localStorage.getItem('recentBarcodes') || '[]') } catch { return [] } })
 
-  useEffect(() => { axios.get(backendUrl + '/api/product/list?limit=500').then(({ data }) => data.success && setProducts(data.products)).catch(() => {}) }, [])
+  useEffect(() => { axios.get(backendUrl + '/api/product/list?limit=500&all=true').then(({ data }) => data.success && setProducts(data.products)).catch(() => {}) }, [])
 
   // Flatten product+variant options.
   const options = useMemo(() => {

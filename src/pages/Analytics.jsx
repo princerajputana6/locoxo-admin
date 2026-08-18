@@ -11,7 +11,7 @@ const Analytics = ({ token }) => {
     try {
       const [ordersRes, productsRes] = await Promise.all([
         axios.post(backendUrl + '/api/order/list', {}, { headers: { token } }),
-        axios.get(backendUrl + '/api/product/list')
+        axios.get(backendUrl + '/api/product/list?all=true')
       ])
       
       if (ordersRes.data.success) setOrders(ordersRes.data.orders)

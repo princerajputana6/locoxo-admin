@@ -251,7 +251,7 @@ const InventoryCalc = ({ token }) => {
   const fetchProducts = async () => {
     setLoading(true)
     try {
-      const { data } = await axios.get(backendUrl + '/api/product/list')
+      const { data } = await axios.get(backendUrl + '/api/product/list?all=true')
       if (data.success) setProducts(data.products || [])
     } catch (err) {
       console.log(err)

@@ -17,15 +17,24 @@ const PATTERNS = ['Solid', 'Graphic', 'Printed', 'Striped', 'Checked']
 // Add Product — colour-wise builder (image 8).
 const AddProductNew = ({ token }) => {
   const navigate = useNavigate()
-  const [nextCode, setNextCode] = useState('')
-  const [basic, setBasic] = useState({ name: '', category: 'Men', fabric: '', neckType: '', sleeve: '', pattern: '', status: 'active' })
+  const [codes, setCodes] = useState([])
+  const [nextCode, setNextCode] = useState('')  // selected product code
+  const [basic, setBasic] = useState({ name: '', category: '', subCategory: '', childCategory: '', fabric: '', neckType: '', sleeve: '', pattern: '', status: 'active' })
   const [sizeChart, setSizeChart] = useState(null)
   // current colour being edited
   const [cur, setCur] = useState({ color: '', colorCode: '#000000', sizes: [], mrp: '', sellingPrice: '', discount: '', description: '', images: [], videos: [] })
   const [colours, setColours] = useState([])
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => { axios.get(backendUrl + '/api/inventory/next-code', { headers: { token } }).then(({ data }) => data.success && setNextCode(data.productCode)).catch(() => {}) }, [])
+  // Load the Product Code registry (only unused codes are offered).
+  useEffect(() => { axios.get(backendUrl + '/api/inventory/product-code', { headers: { token } }).then(({ data }) => data.success && setCodes(data.rows.filter((r) => !r.used))).catch(() => {}) }, [])
+
+  // Selecting a product code auto-fills its category chain + fabric.
+  const pickCode = (code) => {
+    setNextCode(code)
+    const c = codes.find((x) => x.code === code)
+    if (c) setBasic((b) => ({ ...b, category: c.category || b.category, subCategory: c.subCategory || '', childCategory: c.childCategory || '', fabric: c.fabric || b.fabric }))
+  }
 
   const discountedPrice = useMemo(() => {
     const m = Number(cur.mrp), d = Number(cur.discount)
@@ -56,6 +65,7 @@ const AddProductNew = ({ token }) => {
     try {
       const fd = new FormData()
       fd.append('name', basic.name); fd.append('productCode', nextCode); fd.append('category', basic.category)
+      fd.append('subCategory', basic.subCategory || 'General')
       fd.append('fabric', basic.fabric); fd.append('neckType', basic.neckType); fd.append('sleeve', basic.sleeve); fd.append('pattern', basic.pattern)
       fd.append('status', asDraft ? 'draft' : basic.status)
       fd.append('colours', JSON.stringify(all.map((c) => ({ color: c.color, colorCode: c.colorCode, sizes: c.sizes, mrp: c.mrp, sellingPrice: c.sellingPrice, discount: c.discount, description: c.description, stock: 0 }))))
@@ -91,7 +101,15 @@ const AddProductNew = ({ token }) => {
           </label>
         </div>
         <div className='grid md:grid-cols-2 gap-4'>
-          <div><label className={lbl}>Product Code {req}</label><input value={nextCode} readOnly className={inp + ' font-mono font-bold'} placeholder='already jo inventory se uthayega' /><p className='text-[11px] text-muted mt-1'>Pulled from inventory registry.</p></div>
+          <div>
+            <label className={lbl}>Product Code {req}</label>
+            <select value={nextCode} onChange={(e) => pickCode(e.target.value)} className={inp + ' font-mono font-bold'}>
+              <option value=''>— Select product code —</option>
+              {codes.map((c) => <option key={c._id} value={c.code}>{c.code} · {[c.category, c.subCategory, c.childCategory].filter(Boolean).join(' › ')}</option>)}
+            </select>
+            {nextCode ? <p className='text-[11px] text-muted mt-1'>Category: <span className='text-fg font-semibold'>{[basic.category, basic.subCategory, basic.childCategory].filter(Boolean).join(' › ') || '—'}</span>{basic.fabric ? ` · Fabric: ${basic.fabric}` : ''}</p>
+              : <p className='text-[11px] text-muted mt-1'>Pick a code created in Inventory → Create Product Code.</p>}
+          </div>
           <div><label className={lbl}>Product Name {req}</label><input value={basic.name} onChange={(e) => setBasic({ ...basic, name: e.target.value })} className={inp} placeholder='Enter product name' /></div>
         </div>
       </div>

@@ -7,26 +7,34 @@ import { ArrowLeft, Upload, RefreshCw, FileSpreadsheet, Search, Plus, Trash2, Pe
 
 const num = (n, tone = 'bg-accent') => <span className={`grid place-items-center w-5 h-5 rounded-full ${tone} text-white text-[11px] font-bold shrink-0`}>{n}</span>
 const cfg = 'w-full px-3 py-2.5 text-sm rounded-xl bg-white border border-line focus:border-accent outline-none'
-const AUDIENCES = ['Male', 'Female', 'Unisex', 'Child']
 const SIZES = ['Free', 'XS', 'S', 'M', 'L', 'XL', 'XXL']
-const blankRow = () => ({ name: '', audience: 'Male', size: 'M', color: 'Black', stock: '0', lowStock: '5', mrp: '', image: null })
+const blankRow = () => ({ code: '', category: '', subCategory: '', childCategory: '', fabric: '', name: '', size: 'M', color: 'Black', stock: '0', lowStock: '5', mrp: '', image: null })
 
 const BulkAddInventory = ({ token }) => {
   const navigate = useNavigate()
   const [rows, setRows] = useState([blankRow()])
-  const [nextCode, setNextCode] = useState('')
+  const [codes, setCodes] = useState([])
   const [busy, setBusy] = useState(false)
   const [q, setQ] = useState('')
 
-  useEffect(() => { axios.get(backendUrl + '/api/inventory/next-code', { headers: { token } }).then(({ data }) => data.success && setNextCode(data.productCode)).catch(() => {}) }, [])
+  // Offer only product codes not yet used by a product.
+  useEffect(() => { axios.get(backendUrl + '/api/inventory/product-code', { headers: { token } }).then(({ data }) => data.success && setCodes(data.rows.filter((r) => !r.used))).catch(() => {}) }, [])
 
   const upd = (i, f, v) => setRows((r) => r.map((row, idx) => idx === i ? { ...row, [f]: v } : row))
+  // Picking a code fills the row's category chain + fabric.
+  const pickCode = (i, code) => {
+    const c = codes.find((x) => x.code === code)
+    setRows((r) => r.map((row, idx) => idx === i ? { ...row, code, category: c?.category || '', subCategory: c?.subCategory || '', childCategory: c?.childCategory || '', fabric: c?.fabric || '' } : row))
+  }
+
   const submit = async () => {
-    const items = rows.filter((r) => r.name.trim() && r.mrp !== '').map((r) => ({
-      product: { name: r.name, price: r.mrp, audience: r.audience, category: r.audience, lowStockThreshold: Number(r.lowStock) || 5, brand: 'LOCOXO', variants: [{ size: r.size, color: r.color, stock: Number(r.stock) || 0 }] },
+    const valid = rows.filter((r) => r.name.trim() && r.mrp !== '')
+    if (!valid.length) return toast.error('Add at least one product with name and MRP')
+    if (valid.some((r) => !r.code)) return toast.error('Select a product code for every row')
+    const items = valid.map((r) => ({
+      product: { name: r.name, price: r.mrp, productCode: r.code, category: r.category || 'Uncategorized', subCategory: r.subCategory || 'General', fabric: r.fabric || undefined, lowStockThreshold: Number(r.lowStock) || 5, brand: 'LOCOXO', variants: [{ size: r.size, color: r.color, stock: Number(r.stock) || 0 }] },
       file: r.image,
     }))
-    if (!items.length) return toast.error('Add at least one product with name and MRP')
     const fd = new FormData()
     fd.append('products', JSON.stringify(items.map((x) => x.product)))
     items.forEach((x, i) => { if (x.file) fd.append(`image_${i}`, x.file) })
@@ -111,9 +119,9 @@ const BulkAddInventory = ({ token }) => {
                         <input type='file' accept='image/*' hidden onChange={(e) => upd(i, 'image', e.target.files?.[0] || null)} />
                       </label>
                     </td>
-                    <td className='py-2.5 px-2 font-mono text-accent text-xs'>{nextCode ? nextCode.replace(/\d+$/, (m) => String(Number(m) + i).padStart(2, '0')) : 'auto'}</td>
+                    <td className='py-2.5 px-2'><select value={r.code} onChange={(e) => pickCode(i, e.target.value)} className={tc + ' w-28 font-mono text-xs'}><option value=''>— code —</option>{codes.map((c) => <option key={c._id} value={c.code}>{c.code}</option>)}</select></td>
                     <td className='py-2.5 px-2'><input value={r.name} onChange={(e) => upd(i, 'name', e.target.value)} className={tc + ' w-32'} placeholder='Name' /></td>
-                    <td className='py-2.5 px-2'><select value={r.audience} onChange={(e) => upd(i, 'audience', e.target.value)} className={tc}>{AUDIENCES.map((a) => <option key={a}>{a}</option>)}</select></td>
+                    <td className='py-2.5 px-2 text-xs text-muted'>{[r.category, r.subCategory, r.childCategory].filter(Boolean).join(' › ') || <span className='text-faint'>from code</span>}</td>
                     <td className='py-2.5 px-2'><select value={r.size} onChange={(e) => upd(i, 'size', e.target.value)} className={tc}>{SIZES.map((sz) => <option key={sz}>{sz}</option>)}</select></td>
                     <td className='py-2.5 px-2'><input value={r.color} onChange={(e) => upd(i, 'color', e.target.value)} className={tc + ' w-20'} /></td>
                     <td className='py-2.5 px-2'><input type='number' value={r.stock} onChange={(e) => upd(i, 'stock', e.target.value)} className={tc + ' w-16'} /></td>

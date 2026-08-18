@@ -130,7 +130,7 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
   const [pquery, setPquery] = useState('')
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => { axios.get(backendUrl + '/api/product/list?limit=500').then(({ data }) => data.success && setProducts(data.products)).catch(() => {}) }, [])
+  useEffect(() => { axios.get(backendUrl + '/api/product/list?limit=500&all=true').then(({ data }) => data.success && setProducts(data.products)).catch(() => {}) }, [])
 
   const filteredProducts = useMemo(() => {
     const q = pquery.trim().toLowerCase()

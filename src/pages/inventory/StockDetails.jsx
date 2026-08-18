@@ -24,7 +24,7 @@ const StockDetails = ({ token }) => {
   const load = async () => {
     try {
       const [p, s, h] = await Promise.all([
-        axios.get(backendUrl + '/api/product/list?limit=500'),
+        axios.get(backendUrl + '/api/product/list?limit=500&all=true'),
         axios.get(backendUrl + '/api/inventory/summary', { headers: { token } }),
         axios.get(backendUrl + '/api/inventory/history?limit=10', { headers: { token } }),
       ])

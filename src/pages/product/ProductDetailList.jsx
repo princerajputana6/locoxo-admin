@@ -21,7 +21,7 @@ const ProductDetailList = ({ token }) => {
 
   const load = async () => {
     setLoading(true)
-    try { const { data } = await axios.get(backendUrl + '/api/product/list?limit=500'); if (data.success) setProducts(data.products) }
+    try { const { data } = await axios.get(backendUrl + '/api/product/list?limit=500&all=true'); if (data.success) setProducts(data.products) }
     catch { toast.error('Failed to load products') } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
