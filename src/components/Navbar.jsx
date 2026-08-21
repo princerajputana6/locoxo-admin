@@ -8,7 +8,7 @@ const Navbar = ({ setToken, userRole, userData }) => {
     <header className='sticky top-0 z-30 h-16 flex items-center px-4 sm:px-[3%] justify-between bg-surface/80 backdrop-blur-xl border-b border-line'>
       {/* Left: brand + role */}
       <div className='flex items-center gap-3'>
-        <img src={assets.logo_white} alt='Locoxo' className='h-7 w-auto' />
+        <img src={assets.logo} alt='Locoxo' className='h-7 w-auto' />
         <span className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${
           isAdmin
             ? 'bg-accent/15 text-accent border-accent/30'
