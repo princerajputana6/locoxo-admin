@@ -13,6 +13,7 @@ const req = <span className='text-danger'>*</span>
 const CreateProductCode = ({ token }) => {
   const navigate = useNavigate()
   const [nextCode, setNextCode] = useState('')
+  const [suggested, setSuggested] = useState('') // the auto next-code; used to detect a manual override
   const [tree, setTree] = useState([])
   const [cat, setCat] = useState(''); const [sub, setSub] = useState(''); const [child, setChild] = useState('')
   const [fabric, setFabric] = useState('')
@@ -21,7 +22,7 @@ const CreateProductCode = ({ token }) => {
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const loadNext = () => axios.get(backendUrl + '/api/inventory/next-code', { headers: { token } }).then(({ data }) => data.success && setNextCode(data.productCode)).catch(() => {})
+  const loadNext = () => axios.get(backendUrl + '/api/inventory/next-code', { headers: { token } }).then(({ data }) => { if (data.success) { setNextCode(data.productCode); setSuggested(data.productCode) } }).catch(() => {})
   const loadRows = () => axios.get(backendUrl + '/api/inventory/product-code', { headers: { token } }).then(({ data }) => data.success && setRows(data.rows)).catch(() => {})
   const loadTree = () => axios.get(backendUrl + '/api/category/tree', { headers: { token } }).then(({ data }) => data.success && setTree(data.tree)).catch(() => {})
   useEffect(() => { loadNext(); loadRows(); loadTree() }, [])
@@ -37,7 +38,9 @@ const CreateProductCode = ({ token }) => {
     setBusy(true)
     try {
       const payload = {
-        code: 'Automatic', fabric, shortDescription: desc,
+        // Blank or unchanged → let the server auto-assign & advance the sequence;
+        // otherwise use the admin's own code (server rejects duplicates).
+        code: (!nextCode.trim() || nextCode.trim() === suggested) ? 'Automatic' : nextCode.trim(), fabric, shortDescription: desc,
         category: catNode?.name, subCategory: subNode?.name, childCategory: children.find((c) => c._id === child)?.name,
         categoryId: cat || undefined, subCategoryId: sub || undefined, childCategoryId: child || undefined,
       }
@@ -65,8 +68,8 @@ const CreateProductCode = ({ token }) => {
         <div className='grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5'>
           <div>
             <label className={lbl}>{num(1)} Product Code {req}</label>
-            <input value={nextCode} readOnly className={inp + ' font-mono font-bold'} placeholder='Automatic Code' />
-            <p className='text-[11px] text-muted mt-1'>Assigned automatically on save.</p>
+            <input value={nextCode} onChange={(e) => setNextCode(e.target.value)} className={inp + ' font-mono font-bold'} placeholder='Automatic Code' />
+            <p className='text-[11px] text-muted mt-1'>Auto-filled with the next code — edit it to set your own sequence.</p>
           </div>
           <div>
             <label className={lbl}>{num(2)} Category {req}</label>
