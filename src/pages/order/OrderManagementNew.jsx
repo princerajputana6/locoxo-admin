@@ -68,7 +68,7 @@ const OrderManagementNew = ({ token }) => {
       {/* Status tabs */}
       <div className='flex flex-wrap gap-2 mb-4'>
         {TABS.map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${tab === t ? 'bg-fg text-white border-fg' : 'bg-white border-line text-muted hover:text-fg'}`}>
+          <button key={t} onClick={() => setTab(t)} className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${tab === t ? 'bg-accent text-white border-accent' : 'bg-white border-line text-muted hover:text-fg'}`}>
             {t === 'Pickuped' ? 'Pickedup' : t} <span className={`px-1.5 rounded ${tab === t ? 'bg-white/20' : 'bg-surface-2 text-fg'}`}>{counts[t] ?? 0}</span>
           </button>
         ))}

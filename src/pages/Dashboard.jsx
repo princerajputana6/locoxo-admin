@@ -11,7 +11,7 @@ import {
 const StatCard = ({ icon: Icon, value, label, cta, onClick }) => (
   <div className='glass rounded-2xl p-4'>
     <div className='flex items-center gap-3'>
-      <span className='grid place-items-center w-11 h-11 rounded-xl bg-fg text-white'><Icon size={20} /></span>
+      <span className='grid place-items-center w-11 h-11 rounded-xl bg-accent text-white'><Icon size={20} /></span>
       <div><p className='text-2xl font-heading font-extrabold text-fg leading-none'>{value}</p><p className='text-xs text-muted mt-1'>{label}</p></div>
     </div>
     {cta && <button onClick={onClick} className='mt-3 inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline'>{cta} <ArrowRight size={12} /></button>}
@@ -99,7 +99,7 @@ const Dashboard = ({ token }) => {
         <Panel title='Best Selling Products' cta='View full report' onCta={() => navigate('/reports/analytics')}>
           <div className='space-y-2'>
             {(d?.bestSellers || []).map((b, i) => (
-              <div key={i} className='flex items-center gap-3 text-sm'><span className='w-4 text-muted'>{i + 1}</span><span className='w-40 truncate text-fg'>{b.name}</span><div className='flex-1 h-2 rounded-full bg-surface-2 overflow-hidden'><div className='h-full bg-fg' style={{ width: `${(b.sold / maxSold) * 100}%` }} /></div><span className='w-16 text-right text-muted'>{b.sold} Sold</span></div>
+              <div key={i} className='flex items-center gap-3 text-sm'><span className='w-4 text-muted'>{i + 1}</span><span className='w-40 truncate text-fg'>{b.name}</span><div className='flex-1 h-2 rounded-full bg-surface-2 overflow-hidden'><div className='h-full bg-accent' style={{ width: `${(b.sold / maxSold) * 100}%` }} /></div><span className='w-16 text-right text-muted'>{b.sold} Sold</span></div>
             ))}
             {(d?.bestSellers || []).length === 0 && <p className='text-sm text-muted'>No sales yet.</p>}
           </div>

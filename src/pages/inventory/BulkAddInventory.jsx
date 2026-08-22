@@ -3,54 +3,60 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { backendUrl } from '../../App'
 import { toast } from 'react-toastify'
-import { ArrowLeft, Upload, RefreshCw, FileSpreadsheet, Search, Plus, Trash2, Pencil } from 'lucide-react'
+import { ArrowLeft, Upload, RefreshCw, FileSpreadsheet, Search, Plus, Trash2 } from 'lucide-react'
 
-const num = (n, tone = 'bg-accent') => <span className={`grid place-items-center w-5 h-5 rounded-full ${tone} text-white text-[11px] font-bold shrink-0`}>{n}</span>
 const cfg = 'w-full px-3 py-2.5 text-sm rounded-xl bg-white border border-line focus:border-accent outline-none'
+const lbl = 'block text-sm font-bold text-fg mb-1.5'
 const SIZES = ['Free', 'XS', 'S', 'M', 'L', 'XL', 'XXL']
-const blankRow = () => ({ code: '', category: '', subCategory: '', childCategory: '', fabric: '', name: '', size: 'M', color: 'Black', stock: '0', lowStock: '5', mrp: '', image: null })
+const blankForm = () => ({ code: '', category: '', subCategory: '', childCategory: '', fabric: '', name: '', size: 'M', color: 'Black', stock: '0', lowStock: '5', mrp: '', image: null })
 
+// Bulk Add — fill one product in the top form, click "Add to List"; the added
+// products collect in the list below, then Submit saves them all at once.
 const BulkAddInventory = ({ token }) => {
   const navigate = useNavigate()
-  const [rows, setRows] = useState([blankRow()])
+  const [form, setForm] = useState(blankForm())
+  const [items, setItems] = useState([])
   const [codes, setCodes] = useState([])
   const [busy, setBusy] = useState(false)
   const [q, setQ] = useState('')
 
   // Offer only product codes not yet used by a product.
-  useEffect(() => { axios.get(backendUrl + '/api/inventory/product-code', { headers: { token } }).then(({ data }) => data.success && setCodes(data.rows.filter((r) => !r.used))).catch(() => {}) }, [])
+  const loadCodes = () => axios.get(backendUrl + '/api/inventory/product-code', { headers: { token } }).then(({ data }) => data.success && setCodes(data.rows.filter((r) => !r.used))).catch(() => {})
+  useEffect(() => { loadCodes() }, [])
 
-  const upd = (i, f, v) => setRows((r) => r.map((row, idx) => idx === i ? { ...row, [f]: v } : row))
-  // Picking a code fills the row's category chain + fabric.
-  const pickCode = (i, code) => {
+  const set = (f, v) => setForm((r) => ({ ...r, [f]: v }))
+  // Picking a code fills the category chain + fabric.
+  const pickCode = (code) => {
     const c = codes.find((x) => x.code === code)
-    setRows((r) => r.map((row, idx) => idx === i ? { ...row, code, category: c?.category || '', subCategory: c?.subCategory || '', childCategory: c?.childCategory || '', fabric: c?.fabric || '' } : row))
+    setForm((r) => ({ ...r, code, category: c?.category || '', subCategory: c?.subCategory || '', childCategory: c?.childCategory || '', fabric: c?.fabric || '' }))
   }
+  const chain = (r) => [r.category, r.subCategory, r.childCategory].filter(Boolean).join(' › ')
 
-  const submit = async () => {
-    const valid = rows.filter((r) => r.name.trim() && r.mrp !== '')
-    if (!valid.length) return toast.error('Add at least one product with name and MRP')
-    if (valid.some((r) => !r.code)) return toast.error('Select a product code for every row')
-    const items = valid.map((r) => ({
-      product: { name: r.name, price: r.mrp, productCode: r.code, category: r.category || 'Uncategorized', subCategory: r.subCategory || 'General', fabric: r.fabric || undefined, lowStockThreshold: Number(r.lowStock) || 5, brand: 'LOCOXO', variants: [{ size: r.size, color: r.color, stock: Number(r.stock) || 0 }] },
-      file: r.image,
-    }))
+  const addToList = () => {
+    if (!form.code) return toast.error('Select a product code')
+    if (!form.name.trim()) return toast.error('Enter a product name')
+    if (form.mrp === '') return toast.error('Enter the MRP')
+    setItems((list) => [...list, form])
+    setForm(blankForm())
+  }
+  const removeItem = (i) => setItems((list) => list.filter((_, idx) => idx !== i))
+
+  const submitAll = async () => {
+    if (!items.length) return toast.error('Add at least one product to the list')
+    const products = items.map((r) => ({ name: r.name, price: r.mrp, productCode: r.code, category: r.category || 'Uncategorized', subCategory: r.subCategory || 'General', fabric: r.fabric || undefined, lowStockThreshold: Number(r.lowStock) || 5, brand: 'LOCOXO', variants: [{ size: r.size, color: r.color, stock: Number(r.stock) || 0 }] }))
     const fd = new FormData()
-    fd.append('products', JSON.stringify(items.map((x) => x.product)))
-    items.forEach((x, i) => { if (x.file) fd.append(`image_${i}`, x.file) })
+    fd.append('products', JSON.stringify(products))
+    items.forEach((r, i) => { if (r.image) fd.append(`image_${i}`, r.image) })
     setBusy(true)
     try {
       const { data } = await axios.post(backendUrl + '/api/inventory/bulk-add', fd, { headers: { token } })
-      if (data.success) { toast.success(data.message); setRows([blankRow()]); navigate('/inventory') }
+      if (data.success) { toast.success(data.message); setItems([]); setForm(blankForm()); loadCodes() }
       else toast.error(data.message)
     } catch (err) { toast.error(err.response?.data?.message || err.message) }
     finally { setBusy(false) }
   }
 
-  const configs = [
-    ['1', 'Upload Image (Single Image)'], ['2', 'Product Code'], ['3', 'Product Name'], ['4', 'Category'],
-    ['5', 'Size'], ['6', 'Colour'], ['7', 'MRP (₹)'], ['8', 'Stock'], ['9', 'Low Stock Alert'], ['10', 'Re-stock the product'],
-  ]
+  const shown = items.filter((r) => !q || `${r.name} ${r.code}`.toLowerCase().includes(q.toLowerCase()))
 
   return (
     <div className='p-6'>
@@ -62,83 +68,83 @@ const BulkAddInventory = ({ token }) => {
         <button onClick={() => navigate('/inventory')} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'><ArrowLeft size={15} /> Back to Inventory</button>
       </div>
 
-      {/* Config card */}
+      {/* Entry form — all product fields */}
       <div className='glass rounded-2xl p-6 mb-5'>
-        <div className='grid grid-cols-2 md:grid-cols-5 gap-4'>
-          <div className='row-span-2'>
-            <p className='flex items-center gap-2 text-sm font-bold text-fg mb-1'>{num(1)} Upload Image</p>
-            <p className='text-[11px] text-muted mb-2'>Upload a single image for all products</p>
-            <label className='flex flex-col items-center justify-center gap-1 h-28 rounded-xl border-2 border-dashed border-line bg-surface-2 cursor-pointer hover:border-accent/50'>
-              <Upload size={20} className='text-faint' /><span className='text-sm font-medium text-muted'>Upload Image</span><span className='text-[10px] text-faint'>PNG, JPG or JPEG (Max. 2MB)</span>
-              <input type='file' accept='image/*' hidden onChange={(e) => setRows((r) => r.map((row) => ({ ...row, image: e.target.files?.[0] || row.image })))} />
+        <h2 className='text-lg font-heading font-bold text-fg mb-5'>Product Details</h2>
+        <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4'>
+          <div>
+            <label className={lbl}>Product Code</label>
+            <select value={form.code} onChange={(e) => pickCode(e.target.value)} className={cfg + ' font-mono'}>
+              <option value=''>— select code —</option>
+              {codes.map((c) => <option key={c._id} value={c.code}>{c.code}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={lbl}>Category</label>
+            <input value={chain(form) || ''} readOnly placeholder='Auto from code' className={cfg + ' bg-surface-2 text-muted'} />
+          </div>
+          <div><label className={lbl}>Product Name</label><input value={form.name} onChange={(e) => set('name', e.target.value)} className={cfg} placeholder='e.g. Oversized Tee' /></div>
+          <div><label className={lbl}>Size</label><select value={form.size} onChange={(e) => set('size', e.target.value)} className={cfg}>{SIZES.map((s) => <option key={s}>{s}</option>)}</select></div>
+          <div><label className={lbl}>Colour</label><input value={form.color} onChange={(e) => set('color', e.target.value)} className={cfg} placeholder='e.g. Black' /></div>
+          <div><label className={lbl}>MRP (₹)</label><input type='number' value={form.mrp} onChange={(e) => set('mrp', e.target.value)} className={cfg} placeholder='499' /></div>
+          <div><label className={lbl}>Stock</label><input type='number' value={form.stock} onChange={(e) => set('stock', e.target.value)} className={cfg} placeholder='0' /></div>
+          <div><label className={lbl}>Low Stock Alert</label><input type='number' value={form.lowStock} onChange={(e) => set('lowStock', e.target.value)} className={cfg} placeholder='5' /></div>
+          <div>
+            <label className={lbl}>Product Image</label>
+            <label className='flex items-center gap-3 h-[42px] px-3 rounded-xl border-2 border-dashed border-line bg-surface-2 cursor-pointer hover:border-accent/50 overflow-hidden'>
+              {form.image ? <img src={URL.createObjectURL(form.image)} alt='' className='h-8 w-8 rounded object-cover' /> : <Upload size={16} className='text-faint' />}
+              <span className='text-xs text-muted truncate'>{form.image ? form.image.name : 'Upload image'}</span>
+              <input type='file' accept='image/*' hidden onChange={(e) => set('image', e.target.files?.[0] || null)} />
             </label>
           </div>
-          {configs.slice(1).map(([n, label]) => (
-            <div key={n}>
-              <p className='flex items-center gap-2 text-sm font-bold text-fg mb-2'>{num(n)} {label}</p>
-              <select className={cfg}><option>{n === '2' || n === '5' ? 'Automatic' : 'Manually'}</option><option>{n === '2' || n === '5' ? 'Manually' : 'Automatic'}</option></select>
-            </div>
-          ))}
         </div>
         <div className='flex items-center justify-end gap-2 mt-5'>
-          <button onClick={() => setRows([blankRow()])} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'>Cancel</button>
-          <button onClick={submit} disabled={busy} className='px-8 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'>{busy ? 'Saving…' : 'Submit'}</button>
+          <button onClick={() => setForm(blankForm())} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'>Clear</button>
+          <button onClick={addToList} className='inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'><Plus size={15} /> Add to List</button>
         </div>
       </div>
 
-      {/* Table card */}
+      {/* Added items list */}
       <div className='glass rounded-2xl p-5'>
         <div className='flex items-center justify-between gap-3 mb-4'>
           <div className='relative flex-1 max-w-sm'>
             <Search size={15} className='absolute left-3 top-1/2 -translate-y-1/2 text-faint' />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder='Search by Product Name, SKU, Product Code…' className='w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-white border border-line' />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder='Search by Product Name or Code…' className='w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-white border border-line' />
           </div>
           <div className='flex items-center gap-2'>
-            <button className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><RefreshCw size={15} /> Refresh</button>
+            <button onClick={loadCodes} className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><RefreshCw size={15} /> Refresh</button>
             <button className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
+            <button onClick={submitAll} disabled={busy || !items.length} className='px-6 py-2 text-sm font-semibold rounded-lg bg-accent text-white hover:bg-accent-dark disabled:opacity-50'>{busy ? 'Saving…' : `Submit ${items.length || ''}`}</button>
           </div>
         </div>
         <div className='overflow-x-auto'>
           <table className='w-full text-sm'>
             <thead>
               <tr className='text-left text-[11px] font-semibold uppercase tracking-wider text-muted border-b border-line'>
-                <th className='py-3 px-2'>Status</th><th className='py-3 px-2'>S.No</th><th className='py-3 px-2'>Images</th><th className='py-3 px-2'>Product Code</th><th className='py-3 px-2'>Product Name</th><th className='py-3 px-2'>Category</th><th className='py-3 px-2'>Size</th><th className='py-3 px-2'>Colour</th><th className='py-3 px-2'>Stock</th><th className='py-3 px-2'>Low Stock</th><th className='py-3 px-2'>MRP (₹)</th><th className='py-3 px-2'>Action</th>
+                <th className='py-3 px-2'>S.No</th><th className='py-3 px-2'>Image</th><th className='py-3 px-2'>Product Code</th><th className='py-3 px-2'>Product Name</th><th className='py-3 px-2'>Category</th><th className='py-3 px-2'>Size</th><th className='py-3 px-2'>Colour</th><th className='py-3 px-2'>Stock</th><th className='py-3 px-2'>Low Stock</th><th className='py-3 px-2'>MRP (₹)</th><th className='py-3 px-2'>Action</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => {
-                const outOfStock = Number(r.stock) <= 0
-                const tc = 'px-2 py-1.5 text-sm rounded-lg bg-white border border-line focus:border-accent outline-none'
-                return (
+              {shown.length === 0 ? <tr><td colSpan={11} className='py-10 text-center text-muted'>No products added yet — fill the form above and click “Add to List”.</td></tr> :
+                shown.map((r, i) => (
                   <tr key={i} className='border-b border-line/70'>
-                    <td className='py-2.5 px-2'><span className={`px-2 py-1 rounded-md text-[11px] font-semibold ${outOfStock ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'}`}>{outOfStock ? 'Out of Stock' : 'In Stock'}</span></td>
                     <td className='py-2.5 px-2 text-muted'>{i + 1}</td>
-                    <td className='py-2.5 px-2'>
-                      <label className='grid place-items-center w-10 h-10 rounded-lg border border-line bg-surface-2 cursor-pointer overflow-hidden'>
-                        {r.image ? <img src={URL.createObjectURL(r.image)} alt='' className='w-full h-full object-cover' /> : <Plus size={14} className='text-faint' />}
-                        <input type='file' accept='image/*' hidden onChange={(e) => upd(i, 'image', e.target.files?.[0] || null)} />
-                      </label>
-                    </td>
-                    <td className='py-2.5 px-2'><select value={r.code} onChange={(e) => pickCode(i, e.target.value)} className={tc + ' w-28 font-mono text-xs'}><option value=''>— code —</option>{codes.map((c) => <option key={c._id} value={c.code}>{c.code}</option>)}</select></td>
-                    <td className='py-2.5 px-2'><input value={r.name} onChange={(e) => upd(i, 'name', e.target.value)} className={tc + ' w-32'} placeholder='Name' /></td>
-                    <td className='py-2.5 px-2 text-xs text-muted'>{[r.category, r.subCategory, r.childCategory].filter(Boolean).join(' › ') || <span className='text-faint'>from code</span>}</td>
-                    <td className='py-2.5 px-2'><select value={r.size} onChange={(e) => upd(i, 'size', e.target.value)} className={tc}>{SIZES.map((sz) => <option key={sz}>{sz}</option>)}</select></td>
-                    <td className='py-2.5 px-2'><input value={r.color} onChange={(e) => upd(i, 'color', e.target.value)} className={tc + ' w-20'} /></td>
-                    <td className='py-2.5 px-2'><input type='number' value={r.stock} onChange={(e) => upd(i, 'stock', e.target.value)} className={tc + ' w-16'} /></td>
-                    <td className='py-2.5 px-2'><input type='number' value={r.lowStock} onChange={(e) => upd(i, 'lowStock', e.target.value)} className={tc + ' w-16'} /></td>
-                    <td className='py-2.5 px-2'><input type='number' value={r.mrp} onChange={(e) => upd(i, 'mrp', e.target.value)} className={tc + ' w-20'} placeholder='499' /></td>
-                    <td className='py-2.5 px-2'><div className='flex gap-1'>
-                      <button className='grid place-items-center w-7 h-7 rounded-lg border border-line text-accent'><Pencil size={13} /></button>
-                      <button onClick={() => setRows((rr) => rr.length > 1 ? rr.filter((_, idx) => idx !== i) : rr)} className='grid place-items-center w-7 h-7 rounded-lg border border-line text-danger'><Trash2 size={13} /></button>
-                    </div></td>
+                    <td className='py-2.5 px-2'>{r.image ? <img src={URL.createObjectURL(r.image)} alt='' className='w-10 h-10 rounded-lg object-cover border border-line' /> : <span className='grid place-items-center w-10 h-10 rounded-lg border border-line bg-surface-2 text-faint text-[10px]'>—</span>}</td>
+                    <td className='py-2.5 px-2 font-mono text-xs text-accent'>{r.code}</td>
+                    <td className='py-2.5 px-2 font-semibold text-fg'>{r.name}</td>
+                    <td className='py-2.5 px-2 text-xs text-muted'>{chain(r) || '—'}</td>
+                    <td className='py-2.5 px-2 text-fg'>{r.size}</td>
+                    <td className='py-2.5 px-2 text-fg'>{r.color}</td>
+                    <td className='py-2.5 px-2 text-fg'>{r.stock}</td>
+                    <td className='py-2.5 px-2 text-fg'>{r.lowStock}</td>
+                    <td className='py-2.5 px-2 text-fg'>₹{r.mrp}</td>
+                    <td className='py-2.5 px-2'><button onClick={() => removeItem(i)} className='grid place-items-center w-7 h-7 rounded-lg border border-line text-danger hover:bg-danger/5'><Trash2 size={13} /></button></td>
                   </tr>
-                )
-              })}
+                ))}
             </tbody>
           </table>
         </div>
-        <button onClick={() => setRows((r) => [...r, blankRow()])} className='mt-3 inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg border border-dashed border-accent/50 text-accent hover:bg-accent/5'><Plus size={15} /> Add Row</button>
-        <p className='text-xs text-muted mt-3'>Showing 1 to {rows.length} of {rows.length} entries</p>
+        <p className='text-xs text-muted mt-3'>Showing {shown.length} of {items.length} items</p>
       </div>
     </div>
   )

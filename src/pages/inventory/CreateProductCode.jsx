@@ -5,7 +5,6 @@ import { backendUrl } from '../../App'
 import { toast } from 'react-toastify'
 import { ArrowLeft, Plus, RefreshCw, FileSpreadsheet, Search, Pencil, Trash2 } from 'lucide-react'
 
-const num = (n) => <span className='grid place-items-center w-6 h-6 rounded-full bg-accent text-white text-xs font-bold shrink-0'>{n}</span>
 const inp = 'w-full px-3.5 py-2.5 text-sm rounded-xl bg-white border border-line focus:border-accent outline-none'
 const lbl = 'flex items-center gap-2 text-sm font-bold text-fg mb-2'
 const req = <span className='text-danger'>*</span>
@@ -67,12 +66,12 @@ const CreateProductCode = ({ token }) => {
       <div className='glass rounded-2xl p-6 mb-5'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5'>
           <div>
-            <label className={lbl}>{num(1)} Product Code {req}</label>
+            <label className={lbl}>Product Code {req}</label>
             <input value={nextCode} onChange={(e) => setNextCode(e.target.value)} className={inp + ' font-mono font-bold'} placeholder='Automatic Code' />
             <p className='text-[11px] text-muted mt-1'>Auto-filled with the next code — edit it to set your own sequence.</p>
           </div>
           <div>
-            <label className={lbl}>{num(2)} Category {req}</label>
+            <label className={lbl}>Category {req}</label>
             <select value={cat} onChange={(e) => { setCat(e.target.value); setSub(''); setChild('') }} className={inp}>
               <option value=''>Select category</option>
               {tree.map((c) => <option key={c._id} value={c._id}>{c.name}{c.code ? ` (${c.code})` : ''}</option>)}
@@ -99,11 +98,11 @@ const CreateProductCode = ({ token }) => {
             )}
           </div>
           <div>
-            <label className={lbl}>{num(3)} Fabric {req}</label>
+            <label className={lbl}>Fabric {req}</label>
             <input value={fabric} onChange={(e) => setFabric(e.target.value)} className={inp} placeholder='e.g. 100% Cotton' />
           </div>
           <div>
-            <label className={lbl}>{num(4)} Short Description {req}</label>
+            <label className={lbl}>Short Description {req}</label>
             <div className='relative'>
               <textarea value={desc} maxLength={200} onChange={(e) => setDesc(e.target.value)} className={inp + ' h-[70px] resize-none'} placeholder='Short description' />
               <span className='absolute bottom-2 right-3 text-[11px] text-faint'>{desc.length}/200</span>

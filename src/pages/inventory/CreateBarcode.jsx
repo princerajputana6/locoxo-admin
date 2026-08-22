@@ -5,7 +5,6 @@ import { backendUrl } from '../../App'
 import { toast } from 'react-toastify'
 import { ArrowLeft, Download, RefreshCw, FileSpreadsheet, Trash2 } from 'lucide-react'
 
-const num = (n) => <span className='grid place-items-center w-5 h-5 rounded-full bg-accent text-white text-[11px] font-bold shrink-0'>{n}</span>
 const cfg = 'w-full px-3.5 py-2.5 text-sm rounded-xl bg-white border border-line focus:border-accent outline-none'
 
 // Human-readable code preview (mirrors the backend format).
@@ -61,7 +60,7 @@ const CreateBarcode = ({ token }) => {
       <div className='glass rounded-2xl p-6 mb-5'>
         {/* Select product */}
         <div className='mb-5'>
-          <p className='flex items-center gap-2 text-sm font-bold text-fg mb-1'>{num(1)} Select Product</p>
+          <p className='flex items-center gap-2 text-sm font-bold text-fg mb-1'>Select Product</p>
           <p className='text-[11px] text-muted mb-2'>Choose a product to generate barcode</p>
           <select value={selected} onChange={(e) => setSelected(e.target.value)} className={cfg}>
             <option value=''>— Select product —</option>
@@ -71,18 +70,18 @@ const CreateBarcode = ({ token }) => {
 
         <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
           <div>
-            <p className='flex items-center gap-2 text-sm font-bold text-fg mb-2'>{num(2)} Barcode Type</p>
+            <p className='flex items-center gap-2 text-sm font-bold text-fg mb-2'>Barcode Type</p>
             <label className='flex items-center gap-2 text-sm'><input type='radio' checked readOnly className='accent-accent w-4 h-4' /> <span><span className='font-semibold text-fg'>EAN-13</span><br /><span className='text-[11px] text-muted'>Standard product barcode</span></span></label>
-            <p className='flex items-center gap-2 text-sm font-bold text-fg mt-4 mb-1'>{num(3)} Barcode Value (Human Readable Code)</p>
+            <p className='flex items-center gap-2 text-sm font-bold text-fg mt-4 mb-1'>Barcode Value (Human Readable Code)</p>
             <p className='text-[11px] text-muted'>product code No.+ Product name first letter + Category+ size+ colour first 3 + stock no.</p>
             <input readOnly value={sel ? (sel.v.humanBarcode || humanCode(sel.p, sel.v)) : ''} className={cfg + ' mt-1 font-mono'} placeholder='LX2601 AOT M M BLA 01' />
           </div>
           <div>
-            <p className='flex items-center gap-2 text-sm font-bold text-fg mb-2'>{num(5)} Label Size</p>
+            <p className='flex items-center gap-2 text-sm font-bold text-fg mb-2'>Label Size</p>
             <select value={labelSize} onChange={(e) => setLabelSize(e.target.value)} className={cfg}><option>50mm x 30mm</option><option>40mm x 30mm</option><option>60mm x 40mm</option></select>
           </div>
           <div>
-            <p className='flex items-center gap-2 text-sm font-bold text-fg mb-2'>{num(4)} Quantity / Copies</p>
+            <p className='flex items-center gap-2 text-sm font-bold text-fg mb-2'>Quantity / Copies</p>
             <p className='text-[11px] text-muted mb-1'>Number of barcode labels to generate</p>
             <select value={qty} onChange={(e) => setQty(e.target.value)} className={cfg}><option>All (Upto Stock)</option><option>1</option><option>5</option><option>10</option></select>
           </div>

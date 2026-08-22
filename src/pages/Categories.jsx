@@ -3,9 +3,10 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
-import { RefreshCw, Plus, Search, Filter, Pencil, Trash2, Eye, Tag } from 'lucide-react'
+import { RefreshCw, Plus, Search, Filter, Pencil, Trash2, Eye, X, Image as ImageLucide } from 'lucide-react'
 
 const PLACEHOLDER = 'https://placehold.co/80x80/EEF3F9/94A3B8?text=IMG'
+const slugify = (s) => String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
 // Category Management list — one row per Category → Sub → Child path (image 2).
 const Categories = ({ token }) => {
@@ -19,6 +20,8 @@ const Categories = ({ token }) => {
   const [fStatus, setFStatus] = useState('All')
   const [page, setPage] = useState(1)
   const perPage = 8
+  const [modal, setModal] = useState(null)   // { parentId, parentName, kind: 'sub'|'child' }
+  const [viewNode, setViewNode] = useState(null)
 
   const fetchTree = async () => {
     setLoading(true)
@@ -81,7 +84,13 @@ const Categories = ({ token }) => {
   }
 
   const imagesFor = (r) => [r.child?.image, r.sub?.image, r.main?.image, r.main?.banner].filter(Boolean)
-  const sel = 'px-3 py-2 text-sm rounded-lg bg-white border border-line text-fg focus:border-accent outline-none'
+
+  // A small "+ add level" pill used inside the Sub / Child columns.
+  const AddPill = ({ label, onClick }) => (
+    <button onClick={onClick} className='inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-accent/50 text-accent text-[11px] font-semibold hover:bg-accent/5'>
+      <Plus size={12} /> {label}
+    </button>
+  )
 
   return (
     <div className='p-6'>
@@ -93,7 +102,7 @@ const Categories = ({ token }) => {
         </div>
         <div className='flex items-center gap-2'>
           <button onClick={fetchTree} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'><RefreshCw size={15} /> Refresh</button>
-          <button onClick={() => navigate('/categories/add')} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-fg text-white hover:bg-fg/90'><Plus size={15} /> Add Category</button>
+          <button onClick={() => navigate('/categories/add')} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'><Plus size={15} /> Add Category</button>
         </div>
       </div>
 
@@ -137,12 +146,24 @@ const Categories = ({ token }) => {
                         <td className='py-3 px-3'>
                           <div className='flex items-center gap-1'>
                             {(imgs.length ? imgs : [PLACEHOLDER]).slice(0, 3).map((src, k) => <img key={k} src={src} alt='' className='w-9 h-9 rounded-lg object-cover border border-line' />)}
-                            {imgs.length > 3 && <span className='ml-1 px-1.5 py-1 rounded-lg bg-fg text-white text-[10px] font-bold'>+{imgs.length - 3}</span>}
+                            {imgs.length > 3 && <span className='ml-1 px-1.5 py-1 rounded-lg bg-accent text-white text-[10px] font-bold'>+{imgs.length - 3}</span>}
                           </div>
                         </td>
                         <td className='py-3 px-3'><p className='font-semibold text-fg'>{r.main?.name || '—'}</p><p className='text-[11px] text-muted'>( ID: {r.main?.code || '—'} )</p></td>
-                        <td className='py-3 px-3'><p className='text-fg'>{r.sub?.name || '—'}</p>{r.sub && <p className='text-[11px] text-muted'>( ID: {r.sub.code} )</p>}</td>
-                        <td className='py-3 px-3'><p className='text-fg'>{r.child?.name || '—'}</p>{r.child && <p className='text-[11px] text-muted'>( ID: {r.child.code} )</p>}</td>
+                        {/* Sub Category — name + a + to add a sub under this main */}
+                        <td className='py-3 px-3'>
+                          <div className='flex flex-col gap-1.5 items-start'>
+                            <div><p className='text-fg'>{r.sub?.name || '—'}</p>{r.sub && <p className='text-[11px] text-muted'>( ID: {r.sub.code} )</p>}</div>
+                            <AddPill label='Sub' onClick={() => setModal({ parentId: r.main._id, parentName: r.main.name, kind: 'sub' })} />
+                          </div>
+                        </td>
+                        {/* Child Category — name + a + to add a child under this sub */}
+                        <td className='py-3 px-3'>
+                          <div className='flex flex-col gap-1.5 items-start'>
+                            <div><p className='text-fg'>{r.child?.name || '—'}</p>{r.child && <p className='text-[11px] text-muted'>( ID: {r.child.code} )</p>}</div>
+                            {r.sub && <AddPill label='Child' onClick={() => setModal({ parentId: r.sub._id, parentName: r.sub.name, kind: 'child' })} />}
+                          </div>
+                        </td>
                         <td className='py-3 px-3'>
                           <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${(leaf?.status || 'active') === 'active' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
                             {(leaf?.status || 'active') === 'active' ? 'Enabled' : 'Disabled'}
@@ -150,15 +171,15 @@ const Categories = ({ token }) => {
                         </td>
                         <td className='py-3 px-3'>
                           <div className='flex items-center gap-1.5'>
-                            <button onClick={() => navigate('/categories/add?edit=' + r.main._id)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent hover:border-accent/50'><Pencil size={14} /></button>
-                            <button onClick={() => remove(leaf)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-danger hover:border-danger/50'><Trash2 size={14} /></button>
-                            <button onClick={() => toggleStatus(leaf)} title='Toggle status' className={`relative w-10 h-5 rounded-full transition-colors ${(leaf?.status || 'active') === 'active' ? 'bg-fg' : 'bg-line'}`}>
+                            <button onClick={() => navigate('/categories/add?edit=' + r.main._id)} title='Edit category' className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent hover:border-accent/50'><Pencil size={14} /></button>
+                            <button onClick={() => remove(leaf)} title='Delete' className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-danger hover:border-danger/50'><Trash2 size={14} /></button>
+                            <button onClick={() => toggleStatus(leaf)} title='Toggle status' className={`relative w-10 h-5 rounded-full transition-colors ${(leaf?.status || 'active') === 'active' ? 'bg-accent' : 'bg-line'}`}>
                               <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${(leaf?.status || 'active') === 'active' ? 'left-[22px]' : 'left-0.5'}`} />
                             </button>
                           </div>
                         </td>
                         <td className='py-3 px-3 text-center'>
-                          <button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent hover:border-accent/50 mx-auto'><Eye size={14} /></button>
+                          <button onClick={() => setViewNode(r.main)} title='View details' className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent hover:border-accent/50 mx-auto'><Eye size={14} /></button>
                         </td>
                       </tr>
                     )
@@ -173,15 +194,124 @@ const Categories = ({ token }) => {
           <div className='flex items-center gap-1'>
             <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className='w-8 h-8 rounded-lg border border-line text-muted disabled:opacity-40 hover:bg-surface-2'>←</button>
             {Array.from({ length: pages }, (_, i) => i + 1).slice(0, 4).map((p) => (
-              <button key={p} onClick={() => setPage(p)} className={`w-8 h-8 rounded-lg text-sm font-semibold ${p === page ? 'bg-fg text-white' : 'border border-line text-muted hover:bg-surface-2'}`}>{p}</button>
+              <button key={p} onClick={() => setPage(p)} className={`w-8 h-8 rounded-lg text-sm font-semibold ${p === page ? 'bg-accent text-white' : 'border border-line text-muted hover:bg-surface-2'}`}>{p}</button>
             ))}
             <button onClick={() => setPage((p) => Math.min(pages, p + 1))} disabled={page === pages} className='w-8 h-8 rounded-lg border border-line text-muted disabled:opacity-40 hover:bg-surface-2'>→</button>
           </div>
         </div>
       </div>
+
+      {modal && <AddSubModal token={token} info={modal} onClose={() => setModal(null)} onSaved={() => { setModal(null); fetchTree() }} />}
+      {viewNode && <ViewModal node={viewNode} onClose={() => setViewNode(null)} />}
     </div>
   )
 }
+
+// Modal to add a sub- or child-category under a chosen parent.
+const AddSubModal = ({ token, info, onClose, onSaved }) => {
+  const [name, setName] = useState('')
+  const [slug, setSlug] = useState('')
+  const [order, setOrder] = useState('')
+  const [status, setStatus] = useState('active')
+  const [image, setImage] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const inp = 'w-full px-3.5 py-2.5 text-sm rounded-xl bg-white border border-line focus:border-accent outline-none'
+
+  const save = async () => {
+    if (!name.trim()) return toast.error('Name is required')
+    setBusy(true)
+    try {
+      const fd = new FormData()
+      fd.append('name', name)
+      fd.append('slug', slug || slugify(name))
+      fd.append('parentCategory', info.parentId)
+      fd.append('displayOrder', order || 0)
+      fd.append('status', status)
+      if (image) fd.append('image', image)
+      const { data } = await axios.post(`${backendUrl}/api/category/add`, fd, { headers: { token } })
+      if (data.success) { toast.success(`${info.kind === 'sub' ? 'Sub' : 'Child'} category added`); onSaved() }
+      else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || err.message) }
+    finally { setBusy(false) }
+  }
+
+  return (
+    <div className='fixed inset-0 z-50 grid place-items-center p-4'>
+      <div className='fixed inset-0 bg-black/40' onClick={onClose} />
+      <div className='relative w-full max-w-md glass rounded-2xl p-6 bg-white shadow-2xl'>
+        <div className='flex items-center justify-between mb-1'>
+          <h3 className='text-lg font-heading font-bold text-fg'>Add {info.kind === 'sub' ? 'Sub' : 'Child'} Category</h3>
+          <button onClick={onClose} className='grid place-items-center w-8 h-8 rounded-lg text-muted hover:bg-surface-2'><X size={16} /></button>
+        </div>
+        <p className='text-xs text-muted mb-4'>Under <span className='font-semibold text-fg'>{info.parentName}</span></p>
+
+        <div className='space-y-3'>
+          <div><label className='block text-sm font-semibold text-fg mb-1.5'>Name <span className='text-danger'>*</span></label><input value={name} onChange={(e) => { setName(e.target.value); setSlug(slugify(e.target.value)) }} className={inp} placeholder='e.g. Oversized' /></div>
+          <div><label className='block text-sm font-semibold text-fg mb-1.5'>Slug</label><input value={slug} onChange={(e) => setSlug(e.target.value)} className={inp} placeholder='auto from name' /></div>
+          <div className='grid grid-cols-2 gap-3'>
+            <div><label className='block text-sm font-semibold text-fg mb-1.5'>Display Order</label><input type='number' value={order} onChange={(e) => setOrder(e.target.value)} className={inp} placeholder='0' /></div>
+            <div><label className='block text-sm font-semibold text-fg mb-1.5'>Status</label><select value={status} onChange={(e) => setStatus(e.target.value)} className={inp}><option value='active'>Enabled</option><option value='inactive'>Disabled</option></select></div>
+          </div>
+          <div>
+            <label className='block text-sm font-semibold text-fg mb-1.5'>Image (optional)</label>
+            <label className='flex items-center gap-3 h-16 px-3 rounded-xl border-2 border-dashed border-line bg-surface-2 cursor-pointer hover:border-accent/50 overflow-hidden'>
+              {image ? <img src={URL.createObjectURL(image)} alt='' className='h-12 w-12 rounded object-cover' /> : <ImageLucide size={20} className='text-faint' />}
+              <span className='text-sm text-muted'>{image ? image.name : 'Upload image'}</span>
+              <input type='file' accept='image/*' hidden onChange={(e) => setImage(e.target.files?.[0] || null)} />
+            </label>
+          </div>
+        </div>
+
+        <div className='flex items-center justify-end gap-2 mt-5'>
+          <button onClick={onClose} className='px-5 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'>Cancel</button>
+          <button onClick={save} disabled={busy} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'>{busy ? 'Saving…' : 'Add'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Read-only detail modal showing a category + its sub/child tree.
+const ViewModal = ({ node, onClose }) => (
+  <div className='fixed inset-0 z-50 grid place-items-center p-4'>
+    <div className='fixed inset-0 bg-black/40' onClick={onClose} />
+    <div className='relative w-full max-w-lg glass rounded-2xl p-6 bg-white shadow-2xl max-h-[85vh] overflow-y-auto'>
+      <div className='flex items-center justify-between mb-4'>
+        <h3 className='text-lg font-heading font-bold text-fg'>Category Detail</h3>
+        <button onClick={onClose} className='grid place-items-center w-8 h-8 rounded-lg text-muted hover:bg-surface-2'><X size={16} /></button>
+      </div>
+      <div className='flex items-center gap-3 mb-4'>
+        <img src={node.image || node.banner || PLACEHOLDER} alt='' className='w-16 h-16 rounded-xl object-cover border border-line' />
+        <div>
+          <p className='text-lg font-bold text-fg'>{node.name}</p>
+          <p className='text-xs text-muted'>Code: {node.code || '—'} · Slug: {node.slug || '—'}</p>
+          <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${(node.status || 'active') === 'active' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>{(node.status || 'active') === 'active' ? 'Enabled' : 'Disabled'}</span>
+        </div>
+      </div>
+      <div className='grid grid-cols-2 gap-3 text-sm mb-4'>
+        <div className='rounded-lg bg-surface-2 p-3'><p className='text-[11px] text-muted'>Display Order</p><p className='font-semibold text-fg'>{node.displayOrder ?? 0}</p></div>
+        <div className='rounded-lg bg-surface-2 p-3'><p className='text-[11px] text-muted'>Sub Categories</p><p className='font-semibold text-fg'>{(node.kids || []).length}</p></div>
+      </div>
+      <h4 className='text-sm font-bold text-fg mb-2'>Sub &amp; Child Categories</h4>
+      {(node.kids || []).length === 0 ? <p className='text-sm text-muted'>None yet.</p> : (
+        <div className='space-y-2'>
+          {node.kids.map((sub) => (
+            <div key={sub._id} className='rounded-xl border border-line p-3'>
+              <div className='flex items-center gap-2'><span className='px-2 py-0.5 rounded-md bg-accent/10 text-accent text-[11px] font-bold'>SUB</span><span className='font-semibold text-fg'>{sub.name}</span><span className='text-[11px] text-muted'>( {sub.code} )</span></div>
+              {(sub.kids || []).length > 0 && (
+                <div className='mt-2 ml-4 pl-3 border-l border-line space-y-1'>
+                  {sub.kids.map((ch) => (
+                    <div key={ch._id} className='flex items-center gap-2 text-sm'><span className='px-2 py-0.5 rounded-md bg-violet/10 text-violet text-[10px] font-bold'>CHILD</span><span className='text-fg'>{ch.name}</span><span className='text-[11px] text-muted'>( {ch.code} )</span></div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+)
 
 const Select = ({ label, value, onChange, options, labels }) => (
   <div>

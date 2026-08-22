@@ -3,8 +3,9 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Users, Boxes,
   TicketPercent, Image, RotateCcw, Megaphone, Crown, Sparkles,
-  BarChart3, TrendingUp, LifeBuoy, ChevronLeft, ChevronDown, Calculator, LayoutGrid, Star, ShieldCheck,
+  BarChart3, TrendingUp, LifeBuoy, ChevronLeft, ChevronDown, Calculator, LayoutGrid, Star, ShieldCheck, Shield,
 } from 'lucide-react'
+import { assets } from '../assets/assets'
 
 const groups = [
   {
@@ -16,7 +17,7 @@ const groups = [
     items: [
       {
         to: '/products', label: 'Products', icon: Package, children: [
-          { to: '/products', label: 'All Products', end: true },
+          { to: '/products', label: 'Overview', end: true },
           { to: '/products/details', label: 'Product Details' },
           { to: '/products/add', label: 'Add Product' },
           { to: '/categories', label: 'Categories' },
@@ -98,7 +99,15 @@ const Sidebar = () => {
 
   return (
     <aside className={`hidden md:flex flex-col shrink-0 ${collapsed ? 'w-[72px]' : 'w-[230px]'} min-h-screen bg-brand-gradient border-r border-white/10 transition-[width] duration-300 sticky top-0 h-screen`}>
-      <div className='flex items-center px-4 h-16 border-b border-white/10 shrink-0'>
+      <div className='flex items-center gap-2 px-4 h-16 border-b border-white/10 shrink-0'>
+        {!collapsed && (
+          <div className='flex items-center gap-2 min-w-0'>
+            <img src={assets.logo_white} alt='Locoxo' className='h-6 w-auto shrink-0' />
+            <span className='inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/15 text-white border border-white/20 whitespace-nowrap'>
+              <Shield size={10} /> Admin Panel
+            </span>
+          </div>
+        )}
         <button onClick={() => setCollapsed((c) => !c)} className={`ml-auto grid place-items-center w-7 h-7 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all ${collapsed ? 'rotate-180' : ''}`}>
           <ChevronLeft size={16} />
         </button>
