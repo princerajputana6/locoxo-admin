@@ -19,6 +19,7 @@ const AdminManagement = ({ token }) => {
   const [perms, setPerms] = useState([])
   const [q, setQ] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const [editId, setEditId] = useState(null)
   const [form, setForm] = useState({ name: '', email: '', mobile: '', password: '', role: 'staff', accessType: 'limited', status: 'active' })
 
   const load = async () => {
@@ -32,7 +33,7 @@ const AdminManagement = ({ token }) => {
   const savePerms = async () => { try { await axios.put(`${backendUrl}/api/admin-mgmt/permissions`, { permissions: perms }, { headers: { token } }); toast.success('Permissions saved') } catch { toast.error('Failed') } }
   const addUser = async () => {
     if (!form.name || !form.email) return toast.error('Name and email required')
-    try { const { data } = await axios.post(`${backendUrl}/api/admin-mgmt/staff`, form, { headers: { token } }); if (data.success) { toast.success('User added'); setShowAdd(false); setForm({ name: '', email: '', mobile: '', password: '', role: 'staff', accessType: 'limited', status: 'active' }); load() } else toast.error(data.message) } catch (e) { toast.error('Failed') }
+    try { const { data } = editId ? await axios.put(`${backendUrl}/api/admin-mgmt/staff/${editId}`, form, { headers: { token } }) : await axios.post(`${backendUrl}/api/admin-mgmt/staff`, form, { headers: { token } }); if (data.success) { toast.success(editId ? 'User updated' : 'User added'); setShowAdd(false); setEditId(null); setForm({ name: '', email: '', mobile: '', password: '', role: 'staff', accessType: 'limited', status: 'active' }); load() } else toast.error(data.message) } catch (e) { toast.error('Failed') }
   }
   const delUser = async (id) => { if (!id || !window.confirm('Delete this user?')) return; try { await axios.delete(`${backendUrl}/api/admin-mgmt/staff/${id}`, { headers: { token } }); load() } catch { toast.error('Failed') } }
 
@@ -44,7 +45,7 @@ const AdminManagement = ({ token }) => {
     <div className='p-6'>
       <div className='flex items-start justify-between mb-5'>
         <div><h1 className='text-2xl font-heading font-extrabold text-fg'>Admin Management</h1><p className='text-sm text-muted'>Manage admins, staff, permissions and security</p></div>
-        <button onClick={() => setShowAdd(true)} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'><Plus size={15} /> Add User</button>
+        <button onClick={() => { setEditId(null); setForm({ name: '', email: '', mobile: '', password: '', role: 'staff', accessType: 'limited', status: 'active' }); setShowAdd(true) }} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'><Plus size={15} /> Add User</button>
       </div>
 
       <div className='flex items-center gap-6 border-b border-line mb-4'>{['Admin', 'Staff', 'Influencer'].map((t) => <button key={t} onClick={() => setTab(t)} className={`pb-3 -mb-px text-sm font-semibold border-b-2 ${tab === t ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'}`}>{t}</button>)}</div>
@@ -118,7 +119,7 @@ const AdminManagement = ({ token }) => {
                   <td className='py-3 px-2 text-muted'>{u.accessType}</td>
                   <td className='py-3 px-2 text-muted text-xs'>{fmt(u.lastLogin)}</td>
                   <td className='py-3 px-2'><span className={`px-2 py-1 rounded-md text-[11px] font-semibold ${u.status === 'active' ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted'}`}>{u.status === 'active' ? 'Active' : 'Inactive'}</span></td>
-                  <td className='py-3 px-2'><div className='flex gap-1'><button className='inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-accent'><Pencil size={13} /> Edit</button>{u._id && <button onClick={() => delUser(u._id)} className='inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-danger'><Trash2 size={13} /> Delete</button>}</div></td>
+                  <td className='py-3 px-2'><div className='flex gap-1'><button onClick={() => { setEditId(u._id); setForm({ name: u.name || '', email: u.email || '', mobile: u.mobile || '', password: '', role: u.role || 'staff', accessType: u.accessType || 'limited', status: u.status || 'active' }); setShowAdd(true) }} className='inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-accent'><Pencil size={13} /> Edit</button>{u._id && <button onClick={() => delUser(u._id)} className='inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-danger'><Trash2 size={13} /> Delete</button>}</div></td>
                 </tr>
               ))}
             </tbody>
@@ -131,7 +132,7 @@ const AdminManagement = ({ token }) => {
         <div className='fixed inset-0 z-50 grid place-items-center p-4'>
           <div className='fixed inset-0 bg-black/40' onClick={() => setShowAdd(false)} />
           <div className='relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6'>
-            <div className='flex items-center justify-between mb-4'><p className='font-heading font-bold text-fg'>Add User</p><button onClick={() => setShowAdd(false)} className='grid place-items-center w-8 h-8 rounded-lg text-muted hover:bg-surface-2'><X size={16} /></button></div>
+            <div className='flex items-center justify-between mb-4'><p className='font-heading font-bold text-fg'>{editId ? 'Edit User' : 'Add User'}</p><button onClick={() => setShowAdd(false)} className='grid place-items-center w-8 h-8 rounded-lg text-muted hover:bg-surface-2'><X size={16} /></button></div>
             <div className='space-y-3'>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder='Full name' className='w-full px-3 py-2 text-sm rounded-lg bg-white border border-line' />
               <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder='Email' className='w-full px-3 py-2 text-sm rounded-lg bg-white border border-line' />
@@ -142,7 +143,7 @@ const AdminManagement = ({ token }) => {
                 <select value={form.accessType} onChange={(e) => setForm({ ...form, accessType: e.target.value })} className='px-3 py-2 text-sm rounded-lg bg-white border border-line'><option value='limited'>Limited Access</option><option value='all'>All Access</option></select>
               </div>
             </div>
-            <div className='flex gap-2 mt-4'><button onClick={() => setShowAdd(false)} className='flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-line'>Cancel</button><button onClick={addUser} className='flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-accent text-white'>Save User</button></div>
+            <div className='flex gap-2 mt-4'><button onClick={() => setShowAdd(false)} className='flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-line'>Cancel</button><button onClick={addUser} className='flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-accent text-white'>{editId ? 'Update User' : 'Save User'}</button></div>
           </div>
         </div>
       )}

@@ -21,6 +21,7 @@ const Banners = ({ token }) => {
   const [tab, setTab] = useState('homepage_slider')
   const [q, setQ] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const [editing, setEditing] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -38,7 +39,7 @@ const Banners = ({ token }) => {
     <div className='p-6'>
       <div className='flex items-start justify-between mb-5'>
         <div><h1 className='text-2xl font-heading font-extrabold text-fg'>Banner Management</h1><p className='text-sm text-muted'>Create, manage and organize banners for your store</p></div>
-        <div className='flex items-center gap-2'><button onClick={load} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><RefreshCw size={15} /> Refresh</button><button onClick={() => setShowAdd(true)} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'><Plus size={15} /> Add New Banner</button></div>
+        <div className='flex items-center gap-2'><button onClick={load} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><RefreshCw size={15} /> Refresh</button><button onClick={() => { setEditing(null); setShowAdd(true) }} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'><Plus size={15} /> Add New Banner</button></div>
       </div>
 
       <div className='flex flex-wrap items-center gap-2 border-b border-line mb-4'>
@@ -67,7 +68,7 @@ const Banners = ({ token }) => {
                       <td className='py-3 px-2'><button onClick={() => toggle(b)} className={`px-2 py-1 rounded-md text-[11px] font-semibold ${b.isActive ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted'}`}>{b.isActive ? 'Active' : 'Inactive'}</button></td>
                       <td className='py-3 px-2 text-muted text-xs'>{fmt(b.startDate)}</td>
                       <td className='py-3 px-2 text-muted text-xs'>{fmt(b.endDate)}</td>
-                      <td className='py-3 px-2'><div className='flex gap-1'><button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent'><Pencil size={14} /></button><button onClick={() => del(b._id)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-danger'><Trash2 size={14} /></button></div></td>
+                      <td className='py-3 px-2'><div className='flex gap-1'><button onClick={() => { setEditing(b); setShowAdd(true) }} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent hover:bg-accent/5'><Pencil size={14} /></button><button onClick={() => del(b._id)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-danger'><Trash2 size={14} /></button></div></td>
                     </tr>
                   ))}
             </tbody>
@@ -76,14 +77,14 @@ const Banners = ({ token }) => {
         <p className='text-xs text-muted mt-3'>Showing 1 to {rows.length} of {rows.length} banners</p>
       </div>
 
-      {showAdd && <AddDrawer token={token} defaultType={tab} onClose={() => setShowAdd(false)} onDone={() => { setShowAdd(false); load() }} />}
+      {showAdd && <AddDrawer token={token} defaultType={tab} initial={editing} onClose={() => { setShowAdd(false); setEditing(null) }} onDone={() => { setShowAdd(false); setEditing(null); load() }} />}
     </div>
   )
 }
 
-const AddDrawer = ({ token, defaultType, onClose, onDone }) => {
-  const [f, setF] = useState({ bannerType: defaultType, sizeRatio: '16:9 (1920x1080)', title: '', subtitle: '', buttonText: 'Shop Now', buttonLink: '', position: 'Homepage Slider', displayOrder: '1', startDate: '', endDate: '', status: 'active' })
-  const [image, setImage] = useState(null); const [links, setLinks] = useState([]); const [busy, setBusy] = useState(false)
+const AddDrawer = ({ token, defaultType, initial, onClose, onDone }) => {
+  const [f, setF] = useState({ bannerType: initial?.bannerType || defaultType, sizeRatio: initial?.sizeRatio || '16:9 (1920x1080)', title: initial?.title || '', subtitle: initial?.subtitle || '', buttonText: initial?.buttonText || 'Shop Now', buttonLink: initial?.buttonLink || '', position: initial?.position || 'Homepage Slider', displayOrder: initial?.displayOrder ?? '1', startDate: initial?.startDate ? initial.startDate.slice(0, 10) : '', endDate: initial?.endDate ? initial.endDate.slice(0, 10) : '', status: initial?.status || 'active' })
+  const [image, setImage] = useState(null); const [links, setLinks] = useState(initial?.links || []); const [busy, setBusy] = useState(false)
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }))
   const lbl = 'block text-xs font-semibold text-fg mb-1'; const inp = 'w-full px-3 py-2 text-sm rounded-lg bg-white border border-line focus:border-accent outline-none'
 
@@ -95,8 +96,10 @@ const AddDrawer = ({ token, defaultType, onClose, onDone }) => {
       Object.entries(f).forEach(([k, v]) => fd.append(k, v))
       fd.append('links', JSON.stringify(links.filter((l) => l.label && l.url)))
       if (image) fd.append(image.type.startsWith('video/') ? 'video' : 'image', image)
-      const { data } = await axios.post(`${backendUrl}/api/banner/add`, fd, { headers: { token } })
-      if (data.success) { toast.success('Banner saved'); onDone() } else toast.error(data.message)
+      const { data } = initial?._id
+        ? await axios.put(`${backendUrl}/api/banner/update/${initial._id}`, fd, { headers: { token } })
+        : await axios.post(`${backendUrl}/api/banner/add`, fd, { headers: { token } })
+      if (data.success) { toast.success(initial?._id ? 'Banner updated' : 'Banner saved'); onDone() } else toast.error(data.message)
     } catch (err) { toast.error(err.response?.data?.message || err.message) } finally { setBusy(false) }
   }
 
@@ -124,7 +127,7 @@ const AddDrawer = ({ token, defaultType, onClose, onDone }) => {
           <div className='grid grid-cols-2 gap-2'><div><label className={lbl}>Start Date</label><input type='date' value={f.startDate} onChange={(e) => set('startDate', e.target.value)} className={inp} /></div><div><label className={lbl}>End Date</label><input type='date' value={f.endDate} onChange={(e) => set('endDate', e.target.value)} className={inp} /></div></div>
           <div><label className={lbl}>Status</label><select value={f.status} onChange={(e) => set('status', e.target.value)} className={inp}><option value='active'>Active</option><option value='inactive'>Inactive</option></select></div>
         </div>
-        <div className='px-5 py-4 border-t border-line sticky bottom-0 bg-white'><button onClick={submit} disabled={busy} className='w-full px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'>{busy ? 'Saving…' : 'Save Banner'}</button></div>
+        <div className='px-5 py-4 border-t border-line sticky bottom-0 bg-white'><button onClick={submit} disabled={busy} className='w-full px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'>{busy ? 'Saving…' : initial?._id ? 'Update Banner' : 'Save Banner'}</button></div>
       </div>
     </div>
   )

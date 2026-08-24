@@ -28,8 +28,15 @@ const Coupons = ({ token }) => {
   const [q, setQ] = useState('')
   const blank = { name: '', code: '', discountType: 'percentage', discountValue: '', discountAmount: '', validFrom: '', validUntil: '', showTimer: true, minPurchaseAmount: '', maxDiscountAmount: '', usageLimit: '', description: '', visible: true, exchangeNotAvailable: false, returnNotAvailable: false }
   const [f, setF] = useState(blank)
+  const [editId, setEditId] = useState(null)
   const [busy, setBusy] = useState(false)
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }))
+  const startEdit = (c) => {
+    setEditId(c._id)
+    setF({ ...blank, ...c, validFrom: c.validFrom ? c.validFrom.slice(0, 16) : '', validUntil: c.validUntil ? c.validUntil.slice(0, 16) : '' })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  const resetForm = () => { setF(blank); setEditId(null) }
   const timer = useCountdown(f.validUntil || Date.now())
 
   const load = async () => { try { const { data } = await axios.get(`${backendUrl}/api/coupon/list`, { headers: { token } }); if (data.success) setCoupons(data.coupons) } catch { toast.error('Failed to load coupons') } }
@@ -41,8 +48,10 @@ const Coupons = ({ token }) => {
     setBusy(true)
     try {
       const payload = { ...f, discountValue: Number(f.discountValue) || 0, discountAmount: Number(f.discountAmount) || undefined, minPurchaseAmount: Number(f.minPurchaseAmount) || 0, maxDiscountAmount: Number(f.maxDiscountAmount) || undefined, usageLimit: Number(f.usageLimit) || undefined, status: f.visible ? 'active' : 'inactive' }
-      const { data } = await axios.post(`${backendUrl}/api/coupon/add`, payload, { headers: { token } })
-      if (data.success) { toast.success('Coupon saved'); setF(blank); load() } else toast.error(data.message)
+      const { data } = editId
+        ? await axios.put(`${backendUrl}/api/coupon/update/${editId}`, payload, { headers: { token } })
+        : await axios.post(`${backendUrl}/api/coupon/add`, payload, { headers: { token } })
+      if (data.success) { toast.success(editId ? 'Coupon updated' : 'Coupon saved'); resetForm(); load() } else toast.error(data.message)
     } catch (err) { toast.error(err.response?.data?.message || err.message) } finally { setBusy(false) }
   }
   const toggleRow = async (c, field) => { try { await axios.put(`${backendUrl}/api/coupon/update/${c._id}`, { [field]: !c[field] }, { headers: { token } }); load() } catch { toast.error('Failed') } }
@@ -88,7 +97,7 @@ const Coupons = ({ token }) => {
           <div><div className='flex items-center gap-2'><label className='text-sm font-semibold text-fg'><N n={14} />Exchange Not Available</label><Toggle on={f.exchangeNotAvailable} onClick={() => set('exchangeNotAvailable', !f.exchangeNotAvailable)} /></div><p className={hint}>Customers cannot request exchange</p></div>
           <div><div className='flex items-center gap-2'><label className='text-sm font-semibold text-fg'><N n={15} />Return Not Available</label><Toggle on={f.returnNotAvailable} onClick={() => set('returnNotAvailable', !f.returnNotAvailable)} /></div><p className={hint}>Customers cannot request return</p></div>
         </div>
-        <div className='flex items-center justify-end gap-2 mt-5'><button onClick={() => setF(blank)} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'>Cancel</button><button onClick={save} disabled={busy} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'>{busy ? 'Saving…' : 'Save Coupon'}</button></div>
+        <div className='flex items-center justify-end gap-2 mt-5'><button onClick={resetForm} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'>Cancel</button><button onClick={save} disabled={busy} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'>{busy ? 'Saving…' : editId ? 'Update Coupon' : 'Save Coupon'}</button></div>
       </div>
 
       {/* Coupons table */}
@@ -117,7 +126,7 @@ const Coupons = ({ token }) => {
                     <td className='py-3 px-2'><RowToggle c={c} field='visible' /></td>
                     <td className='py-3 px-2'><RowToggle c={c} field='exchangeNotAvailable' /></td>
                     <td className='py-3 px-2'><RowToggle c={c} field='returnNotAvailable' /></td>
-                    <td className='py-3 px-2'><div className='flex gap-1'><button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent'><Pencil size={13} /></button><button onClick={() => del(c._id)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-danger'><Trash2 size={13} /></button></div></td>
+                    <td className='py-3 px-2'><div className='flex gap-1'><button onClick={() => startEdit(c)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent hover:bg-accent/5'><Pencil size={13} /></button><button onClick={() => del(c._id)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-danger'><Trash2 size={13} /></button></div></td>
                   </tr>
                 ))}
             </tbody>

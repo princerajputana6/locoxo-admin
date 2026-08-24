@@ -17,6 +17,7 @@ const CreateProductCode = ({ token }) => {
   const [cat, setCat] = useState(''); const [sub, setSub] = useState(''); const [child, setChild] = useState('')
   const [fabric, setFabric] = useState('')
   const [desc, setDesc] = useState('')
+  const [editId, setEditId] = useState(null)
   const [rows, setRows] = useState([])
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
@@ -43,12 +44,15 @@ const CreateProductCode = ({ token }) => {
         category: catNode?.name, subCategory: subNode?.name, childCategory: children.find((c) => c._id === child)?.name,
         categoryId: cat || undefined, subCategoryId: sub || undefined, childCategoryId: child || undefined,
       }
-      const { data } = await axios.post(backendUrl + '/api/inventory/product-code', payload, { headers: { token } })
-      if (data.success) { toast.success(`Created ${data.productCode.code}`); setCat(''); setSub(''); setChild(''); setFabric(''); setDesc(''); loadNext(); loadRows() }
+      const { data } = editId
+        ? await axios.put(`${backendUrl}/api/inventory/product-code/${editId}`, { category: catNode?.name, fabric, shortDescription: desc }, { headers: { token } })
+        : await axios.post(backendUrl + '/api/inventory/product-code', payload, { headers: { token } })
+      if (data.success) { toast.success(editId ? 'Product code updated' : `Created ${data.productCode.code}`); setEditId(null); setCat(''); setSub(''); setChild(''); setFabric(''); setDesc(''); loadNext(); loadRows() }
       else toast.error(data.message)
     } catch (err) { toast.error(err.response?.data?.message || err.message) }
     finally { setBusy(false) }
   }
+  const startEdit = (r) => { setEditId(r._id); setCat(r.categoryId || ''); setSub(r.subCategoryId || ''); setChild(r.childCategoryId || ''); setFabric(r.fabric || ''); setDesc(r.shortDescription || ''); setNextCode(r.code); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const remove = async (id) => { if (!window.confirm('Delete this product code?')) return; try { await axios.delete(`${backendUrl}/api/inventory/product-code/${id}`, { headers: { token } }); loadRows() } catch { toast.error('Failed') } }
   const filtered = rows.filter((r) => !q || `${r.code} ${r.category} ${r.subCategory || ''} ${r.fabric} ${r.shortDescription}`.toLowerCase().includes(q.toLowerCase()))
 
@@ -110,8 +114,8 @@ const CreateProductCode = ({ token }) => {
           </div>
         </div>
         <div className='flex items-center justify-end gap-2 mt-5'>
-          <button onClick={() => { setCat(''); setSub(''); setChild(''); setFabric(''); setDesc('') }} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'>Cancel</button>
-          <button onClick={submit} disabled={busy} className='px-8 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'>{busy ? 'Saving…' : 'Submit'}</button>
+          <button onClick={() => { setEditId(null); setCat(''); setSub(''); setChild(''); setFabric(''); setDesc(''); loadNext() }} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'>Cancel</button>
+          <button onClick={submit} disabled={busy} className='px-8 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'>{busy ? 'Saving…' : editId ? 'Update' : 'Submit'}</button>
         </div>
       </div>
 
@@ -144,7 +148,7 @@ const CreateProductCode = ({ token }) => {
                     <td className='py-3 px-3 text-fg'>{r.fabric || '—'}</td>
                     <td className='py-3 px-3 text-muted'>{r.shortDescription || '—'}</td>
                     <td className='py-3 px-3'><div className='flex items-center gap-1.5'>
-                      <button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent hover:bg-accent/5'><Pencil size={14} /></button>
+                      <button onClick={() => startEdit(r)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent hover:bg-accent/5'><Pencil size={14} /></button>
                       <button onClick={() => remove(r._id)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-danger hover:bg-danger/5'><Trash2 size={14} /></button>
                     </div></td>
                   </tr>

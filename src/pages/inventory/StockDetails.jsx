@@ -47,6 +47,7 @@ const StockDetails = ({ token }) => {
   }, [products])
 
   const selectedProduct = products.find((p) => p._id === pid)
+  const delProduct = async (prod) => { if (!window.confirm(`Delete product "${prod.name}" and all its stock?`)) return; try { await axios.post(`${backendUrl}/api/product/remove`, { id: prod._id }, { headers: { token } }); toast.success('Deleted'); load() } catch { toast.error('Failed') } }
 
   const applyAdjustment = async () => {
     if (!pid || !size || !color) return toast.error('Select product, size and colour')
@@ -123,7 +124,7 @@ const StockDetails = ({ token }) => {
                     <td className='py-2.5 px-2 text-fg'>{r.v.color}</td>
                     <td className='py-2.5 px-2 font-semibold text-fg'>{r.v.stock}</td>
                     <td className='py-2.5 px-2 text-muted'>{r.threshold}</td>
-                    <td className='py-2.5 px-2'><div className='flex gap-1'><button className='grid place-items-center w-7 h-7 rounded-lg border border-line text-accent'><Pencil size={13} /></button><button className='grid place-items-center w-7 h-7 rounded-lg border border-line text-danger'><Trash2 size={13} /></button></div></td>
+                    <td className='py-2.5 px-2'><div className='flex gap-1'><button onClick={() => { setPid(r.p._id); setSize(r.v.size); setColor(r.v.color); window.scrollTo({ top: 0, behavior: 'smooth' }) }} title='Adjust stock' className='grid place-items-center w-7 h-7 rounded-lg border border-line text-accent hover:bg-accent/5'><Pencil size={13} /></button><button onClick={() => delProduct(r.p)} title='Delete product' className='grid place-items-center w-7 h-7 rounded-lg border border-line text-danger hover:bg-danger/5'><Trash2 size={13} /></button></div></td>
                   </tr>
                 ))}
             </tbody>

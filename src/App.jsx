@@ -79,11 +79,11 @@ const App = () => {
       <ToastContainer position="top-right" autoClose={3000} />
       {token === ""
         ? <Login setToken={setToken} setUserRole={setUserRole} setUserData={setUserData} />
-        : <>
-          <Navbar setToken={handleLogout} userRole={userRole} userData={userData} />
+        : (
           <div className='flex w-full'>
             {userRole === 'admin' && <Sidebar />}
-            <div className='flex-1 bg-ink min-h-screen'>
+            <div className='flex-1 bg-ink min-h-screen flex flex-col'>
+              <Navbar setToken={handleLogout} userRole={userRole} userData={userData} />
               {userRole === 'admin' ? (
                 <Routes>
                   <Route path='/' element={<Dashboard token={token} />} />
@@ -128,7 +128,7 @@ const App = () => {
               )}
             </div>
           </div>
-        </>
+        )
       }
     </div>
   )

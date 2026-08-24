@@ -4,7 +4,7 @@ import { backendUrl, currency } from '../App'
 import { toast } from 'react-toastify'
 import {
   Users, UserCheck, UserX, IndianRupee, TrendingUp, FileSpreadsheet, Plus, Search,
-  Filter, Copy, Eye, Pencil, MoreVertical, X, Camera, Eye as EyeIcon, EyeOff,
+  Filter, Copy, Eye, Pencil, Trash2, MoreVertical, X, Camera, Eye as EyeIcon, EyeOff,
 } from 'lucide-react'
 
 const TYPE_PILL = { barter: 'bg-success/10 text-success', unpaid: 'bg-accent/10 text-accent', paid: 'bg-violet/10 text-violet', collab: 'bg-amber/10 text-amber', other: 'bg-muted/10 text-muted' }
@@ -19,6 +19,7 @@ const Influencers = ({ token }) => {
   const [rows, setRows] = useState([]); const [summary, setSummary] = useState(null); const [loading, setLoading] = useState(true)
   const [q, setQ] = useState(''); const [fStatus, setFStatus] = useState('All'); const [fType, setFType] = useState('All')
   const [showAdd, setShowAdd] = useState(false)
+  const [editing, setEditing] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -29,6 +30,7 @@ const Influencers = ({ token }) => {
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t) }, [q])
 
   const setStatus = async (id, status) => { try { await axios.put(`${backendUrl}/api/influencer/${id}`, { status }, { headers: { token } }); load() } catch { toast.error('Failed') } }
+  const del = async (id) => { if (!window.confirm('Delete this influencer?')) return; try { await axios.delete(`${backendUrl}/api/influencer/${id}`, { headers: { token } }); toast.success('Deleted'); load() } catch { toast.error('Failed') } }
   const sel = 'px-3 py-2.5 text-sm rounded-xl bg-white border border-line text-fg focus:border-accent outline-none'
 
   return (
@@ -37,7 +39,7 @@ const Influencers = ({ token }) => {
         <div><h1 className='text-2xl font-heading font-extrabold text-fg'>Influencer Management</h1><p className='text-sm text-muted'>Manage influencers, commission, codes and performance.</p></div>
         <div className='flex items-center gap-2'>
           <button className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
-          <button onClick={() => setShowAdd(true)} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'><Plus size={15} /> Add Influencer</button>
+          <button onClick={() => { setEditing(null); setShowAdd(true) }} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'><Plus size={15} /> Add Influencer</button>
         </div>
       </div>
 
@@ -76,7 +78,7 @@ const Influencers = ({ token }) => {
                       <td className='py-3 px-2 text-fg'>{currency}{(r.totalEarnings || 0).toLocaleString('en-IN')}</td>
                       <td className='py-3 px-2 text-muted text-xs'>{new Date(r.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       <td className='py-3 px-2'><select value={r.status} onChange={(e) => setStatus(r._id, e.target.value)} className={`px-2 py-1 rounded-md text-[11px] font-semibold border-0 outline-none ${STATUS_PILL[r.status] || STATUS_PILL.inactive}`}>{['active', 'suspended', 'deactivated'].map((s) => <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>)}</select></td>
-                      <td className='py-3 px-2'><div className='flex gap-1'><button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent'><Eye size={14} /></button><button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent'><Pencil size={14} /></button><button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted'><MoreVertical size={14} /></button></div></td>
+                      <td className='py-3 px-2'><div className='flex gap-1'><button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent'><Eye size={14} /></button><button onClick={() => { setEditing(r); setShowAdd(true) }} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent hover:bg-accent/5'><Pencil size={14} /></button><button onClick={() => del(r._id)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-danger hover:bg-danger/5'><Trash2 size={14} /></button></div></td>
                     </tr>
                   ))}
             </tbody>
@@ -84,13 +86,13 @@ const Influencers = ({ token }) => {
         </div>
       </div>
 
-      {showAdd && <AddDrawer token={token} onClose={() => setShowAdd(false)} onDone={() => { setShowAdd(false); load() }} />}
+      {showAdd && <AddDrawer token={token} initial={editing} onClose={() => { setShowAdd(false); setEditing(null) }} onDone={() => { setShowAdd(false); setEditing(null); load() }} />}
     </div>
   )
 }
 
-const AddDrawer = ({ token, onClose, onDone }) => {
-  const [f, setF] = useState({ name: '', email: '', phone: '', dob: '', instagramHandle: '', code: '', type: '', password: '', sameCommissionForAll: true, commissionType: 'percentage', commissionRate: '10', commissionAmount: '', address: '', notes: '', status: 'active' })
+const AddDrawer = ({ token, initial, onClose, onDone }) => {
+  const [f, setF] = useState({ name: initial?.name || '', email: initial?.email || '', phone: initial?.phone || '', dob: initial?.dob ? String(initial.dob).slice(0, 10) : '', instagramHandle: initial?.instagramHandle || '', code: initial?.code || '', type: initial?.type || '', password: '', sameCommissionForAll: initial?.sameCommissionForAll ?? true, commissionType: initial?.commissionType || 'percentage', commissionRate: initial?.commissionRate ?? '10', commissionAmount: initial?.commissionAmount ?? '', address: initial?.address || '', notes: initial?.notes || '', status: initial?.status || 'active' })
   const [photo, setPhoto] = useState(null); const [showPass, setShowPass] = useState(false); const [busy, setBusy] = useState(false)
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }))
   const lbl = 'block text-xs font-semibold text-fg mb-1'; const inp = 'w-full px-3 py-2 text-sm rounded-lg bg-white border border-line focus:border-accent outline-none'
@@ -103,8 +105,10 @@ const AddDrawer = ({ token, onClose, onDone }) => {
       const fd = new FormData()
       Object.entries(f).forEach(([k, v]) => fd.append(k, v))
       if (photo) fd.append('image', photo)
-      const { data } = await axios.post(`${backendUrl}/api/influencer/add`, fd, { headers: { token } })
-      if (data.success) { toast.success('Influencer added'); onDone() } else toast.error(data.message)
+      const { data } = initial?._id
+        ? await axios.put(`${backendUrl}/api/influencer/${initial._id}`, fd, { headers: { token } })
+        : await axios.post(`${backendUrl}/api/influencer/add`, fd, { headers: { token } })
+      if (data.success) { toast.success(initial?._id ? 'Influencer updated' : 'Influencer added'); onDone() } else toast.error(data.message)
     } catch (err) { toast.error(err.response?.data?.message || err.message) } finally { setBusy(false) }
   }
 
@@ -146,7 +150,7 @@ const AddDrawer = ({ token, onClose, onDone }) => {
             <div className='mt-2 flex gap-3 text-xs'><label className='flex items-center gap-1'><input type='radio' checked={f.status === 'active'} onChange={() => set('status', 'active')} className='accent-accent' /> Active</label><label className='flex items-center gap-1'><input type='radio' checked={f.status === 'deactivated'} onChange={() => set('status', 'deactivated')} className='accent-accent' /> Deactivated</label></div>
           </div>
         </div>
-        <div className='flex items-center gap-2 px-5 py-4 border-t border-line sticky bottom-0 bg-white'><button onClick={onClose} className='flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'>Cancel</button><button onClick={submit} disabled={busy} className='flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'>{busy ? 'Saving…' : 'Save Influencer'}</button></div>
+        <div className='flex items-center gap-2 px-5 py-4 border-t border-line sticky bottom-0 bg-white'><button onClick={onClose} className='flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'>Cancel</button><button onClick={submit} disabled={busy} className='flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'>{busy ? 'Saving…' : initial?._id ? 'Update Influencer' : 'Save Influencer'}</button></div>
       </div>
     </div>
   )
