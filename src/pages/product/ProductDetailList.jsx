@@ -6,6 +6,7 @@ import { toast } from 'react-toastify'
 import { RefreshCw, FileSpreadsheet, Search, SlidersHorizontal, Pencil, Trash2, ChevronDown } from 'lucide-react'
 
 const STATUS_PILL = {
+  pending: 'bg-amber/10 text-amber',
   active: 'bg-success/10 text-success', inactive: 'bg-danger/10 text-danger', draft: 'bg-accent/10 text-accent',
   saved: 'bg-violet/10 text-violet', archived: 'bg-muted/10 text-muted', hidden: 'bg-muted/10 text-muted',
   coming_soon: 'bg-violet/10 text-violet', not_available: 'bg-amber/10 text-amber', notify_me: 'bg-violet/10 text-violet',

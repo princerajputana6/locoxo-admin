@@ -203,7 +203,7 @@ const AddProductNew = ({ token }) => {
         <button onClick={() => navigate('/products')} className='px-5 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'>Cancel</button>
         <div className='flex items-center gap-2'>
           <button onClick={() => submit(true)} disabled={busy} className='inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-white border border-accent text-accent'><Save size={15} /> Save as Draft</button>
-          <button onClick={() => submit(false)} disabled={busy} className='inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'><Send size={15} /> {busy ? 'Submitting…' : 'Final Submit'}</button>
+          <button onClick={() => submit(false)} disabled={busy} className='inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'><Send size={15} /> {busy ? 'Submitting…' : 'Submit for Approval'}</button>
         </div>
       </div>
     </div>

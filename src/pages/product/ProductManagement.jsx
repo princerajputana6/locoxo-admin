@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom'
 import { backendUrl } from '../../App'
 import { toast } from 'react-toastify'
 import {
-  Shirt, CheckCircle2, PackageX, AlertTriangle, CalendarPlus, FileText,
-  Plus, FileSpreadsheet, RefreshCw, Search, Copy, Pencil, MoreVertical, Info,
+  Shirt, CheckCircle2, PackageX, AlertTriangle, Clock, FileText,
+  Plus, FileSpreadsheet, RefreshCw, Search, Copy, Pencil, Check, Ban,
 } from 'lucide-react'
 
 const STATUS_OPTS = [
+  { v: 'pending', l: 'Pending Approval', c: 'text-amber' },
   { v: 'active', l: 'Active', c: 'text-success' }, { v: 'inactive', l: 'Inactive', c: 'text-danger' },
   { v: 'coming_soon', l: 'Coming Soon', c: 'text-violet' }, { v: 'not_available', l: 'Not Available', c: 'text-amber' },
   { v: 'hidden', l: 'Hidden', c: 'text-muted' }, { v: 'draft', l: 'Draft', c: 'text-accent' },
@@ -48,6 +49,7 @@ const ProductManagement = ({ token }) => {
     return {
       total: rows.length,
       active: rows.filter((r) => r.status === 'active').length,
+      pending: rows.filter((r) => r.status === 'pending').length,
       out: rows.filter((r) => r.totalStock <= 0).length,
       low: rows.filter((r) => r.totalStock > 0 && r.totalStock <= 5).length,
       recent: rows.filter((r) => now - (r.date || 0) < month).length,
@@ -85,10 +87,10 @@ const ProductManagement = ({ token }) => {
 
       <div className='grid grid-cols-2 md:grid-cols-5 gap-3 mb-5'>
         <Stat icon={Shirt} label='Total Products' value={stats.total} sub='View all products →' tone='blue' />
+        <Stat icon={Clock} label='Pending Approval' value={stats.pending} sub='Awaiting approval' tone='amber' />
         <Stat icon={CheckCircle2} label='Active Products' value={stats.active} sub={stats.total ? `${Math.round(stats.active / stats.total * 100)}% of total` : ''} tone='green' />
         <Stat icon={PackageX} label='Out of Stock' value={stats.out} tone='red' />
-        <Stat icon={AlertTriangle} label='Low Stock' value={stats.low} tone='amber' />
-        <Stat icon={CalendarPlus} label='Recently Added' value={stats.recent} sub='Last 30 days' tone='violet' />
+        <Stat icon={AlertTriangle} label='Low Stock' value={stats.low} tone='violet' />
       </div>
 
       <div className='glass rounded-2xl p-5'>
@@ -128,9 +130,11 @@ const ProductManagement = ({ token }) => {
                       <td className='py-3 px-2 text-muted text-xs'>{r.date ? new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
                       <td className='py-3 px-2'><span className='text-accent text-xs'>{slug(r.name)}</span></td>
                       <td className='py-3 px-2'><div className='flex items-center gap-1'>
-                        <button onClick={() => { navigator.clipboard?.writeText(window.location.origin + slug(r.name)); toast.success('Link copied') }} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent'><Copy size={14} /></button>
-                        <button onClick={() => navigate('/products/add?edit=' + r._id)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent'><Pencil size={14} /></button>
-                        <button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted'><MoreVertical size={14} /></button>
+                        {r.status === 'active'
+                          ? <button onClick={() => changeStatus(r._id, 'pending')} title='Unpublish (hide from store)' className='inline-flex items-center gap-1 px-2.5 h-8 rounded-lg border border-line text-danger hover:bg-danger/5 text-xs font-semibold'><Ban size={13} /> Unpublish</button>
+                          : <button onClick={() => changeStatus(r._id, 'active')} title='Approve & publish to store' className='inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-success text-white hover:bg-success/90 text-xs font-semibold'><Check size={13} /> Approve</button>}
+                        <button onClick={() => { navigator.clipboard?.writeText(window.location.origin + slug(r.name)); toast.success('Link copied') }} title='Copy link' className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent'><Copy size={14} /></button>
+                        <button onClick={() => navigate('/products/add?edit=' + r._id)} title='Edit' className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent'><Pencil size={14} /></button>
                       </div></td>
                     </tr>
                   ))}
@@ -139,7 +143,7 @@ const ProductManagement = ({ token }) => {
         </div>
 
         <div className='mt-4 px-4 py-2.5 rounded-lg bg-accent/5 border border-accent/20 text-xs text-muted flex items-center gap-2'>
-          <Info size={14} className='text-accent' /> Products with “Coming Soon”, “Notify Me”, “Hidden” or “Draft” status will not be visible on the website.
+          <Clock size={14} className='text-accent' /> New products are added as <b className='text-amber font-semibold'>Pending Approval</b> and stay hidden from the customer portal until you click <b className='text-success font-semibold'>Approve</b>. Products that are Pending, Draft, Hidden, Coming Soon or Notify&nbsp;Me are not visible on the website.
         </div>
       </div>
     </div>
