@@ -5,7 +5,7 @@ import { backendUrl, currency } from '../../App'
 import { toast } from 'react-toastify'
 import {
   Package, Hash, Boxes, AlertTriangle, PackageX, Wallet,
-  RefreshCw, PlusCircle, Barcode, Search, Pencil, Trash2, ArrowUpDown, X, FileSpreadsheet,
+  RefreshCw, PlusCircle, Barcode, Search, Pencil, Trash2, ArrowUpDown, X, FileSpreadsheet, ChevronDown,
 } from 'lucide-react'
 import { exportToCsv } from '../../utils/exportCsv'
 
@@ -32,6 +32,8 @@ const InventoryOverview = ({ token }) => {
   const [q, setQ] = useState('')
   const [editItem, setEditItem] = useState(null)
   const [adjItem, setAdjItem] = useState(null)
+  const [open, setOpen] = useState({})   // which product-code accordions are expanded
+  const toggle = (code) => setOpen((o) => ({ ...o, [code]: !o[code] }))
 
   const load = async () => {
     setLoading(true)
@@ -91,6 +93,12 @@ const InventoryOverview = ({ token }) => {
             <Search size={15} className='absolute left-3 top-1/2 -translate-y-1/2 text-faint' />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder='Search by product code, category…' className='w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-white border border-line' />
           </div>
+          {groups.length > 0 && (
+            <div className='flex items-center gap-2'>
+              <button onClick={() => setOpen(Object.fromEntries(groups.map((g) => [g.productCode, true])))} className='px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'>Expand all</button>
+              <button onClick={() => setOpen({})} className='px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'>Collapse all</button>
+            </div>
+          )}
         </div>
 
         {loading ? <div className='space-y-3'>{[0, 1, 2].map((i) => <div key={i} className='skeleton h-16 rounded-xl' />)}</div> :
@@ -100,16 +108,17 @@ const InventoryOverview = ({ token }) => {
                 const total = g.items.reduce((s, it) => s + (it.stock || 0), 0)
                 return (
                   <div key={g.productCode} className='rounded-xl border border-line overflow-hidden'>
-                    {/* Group header — the product code */}
-                    <div className='flex items-center justify-between px-4 py-2.5 bg-surface-2 border-b border-line'>
-                      <div className='flex items-center gap-3'>
+                    {/* Accordion header — click the product code to expand/collapse */}
+                    <button onClick={() => toggle(g.productCode)} className={`w-full flex items-center justify-between px-4 py-3 bg-surface-2 hover:bg-surface-3 transition-colors ${open[g.productCode] ? 'border-b border-line' : ''}`}>
+                      <div className='flex items-center gap-3 min-w-0'>
+                        <ChevronDown size={16} className={`text-muted transition-transform shrink-0 ${open[g.productCode] ? 'rotate-180' : ''}`} />
                         <span className='font-mono font-bold text-accent'>{g.productCode}</span>
-                        <span className='text-xs text-muted'>{[g.category, g.subCategory, g.childCategory].filter(Boolean).join(' › ') || '—'}</span>
+                        <span className='text-xs text-muted truncate'>{[g.category, g.subCategory, g.childCategory].filter(Boolean).join(' › ') || '—'}</span>
                         {g.fabric && <span className='text-[11px] text-faint'>· {g.fabric}</span>}
                       </div>
-                      <span className='text-xs font-semibold text-fg'>{g.items.length} variant(s) · {total} in stock</span>
-                    </div>
-                    <table className='w-full text-sm'>
+                      <span className='text-xs font-semibold text-fg shrink-0 ml-3'>{g.items.length} variant(s) · {total} in stock</span>
+                    </button>
+                    {open[g.productCode] && <table className='w-full text-sm'>
                       <thead><tr className='text-left text-[11px] font-semibold uppercase tracking-wider text-muted border-b border-line'>
                         <th className='py-2.5 px-3'>Name</th><th className='py-2.5 px-3'>Size</th><th className='py-2.5 px-3'>Colour</th><th className='py-2.5 px-3'>Stock</th><th className='py-2.5 px-3'>Low</th><th className='py-2.5 px-3'>MRP</th><th className='py-2.5 px-3'>SKU</th><th className='py-2.5 px-3'>Status</th><th className='py-2.5 px-3'>Action</th>
                       </tr></thead>
@@ -132,7 +141,7 @@ const InventoryOverview = ({ token }) => {
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </table>}
                   </div>
                 )
               })}

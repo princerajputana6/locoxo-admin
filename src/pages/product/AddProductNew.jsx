@@ -137,8 +137,9 @@ const AddProductNew = ({ token }) => {
           <div>
             <label className={lbl}>Select Colour {req}</label>
             <div className='flex items-center gap-2'>
-              <input type='color' value={cur.colorCode} onChange={(e) => setC('colorCode', e.target.value)} className='w-11 h-11 rounded-lg border border-line p-0.5 shrink-0' />
-              <input value={cur.color} onChange={(e) => setC('color', e.target.value)} className={inp} placeholder='e.g. Navy Blue' />
+              {/* Picking a colour pre-fills its colour code (hex) into the field. */}
+              <input type='color' value={cur.colorCode} onChange={(e) => setCur((c) => ({ ...c, colorCode: e.target.value, color: e.target.value.toUpperCase() }))} className='w-11 h-11 rounded-lg border border-line p-0.5 shrink-0' />
+              <input value={cur.color} onChange={(e) => setC('color', e.target.value)} className={inp} placeholder='e.g. Navy Blue or #1E3A8A' />
             </div>
             <p className='text-[11px] text-muted mt-1'>Add product details, images and videos for each colour.</p>
           </div>
