@@ -3,6 +3,7 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { backendUrl } from '../../App'
 import { toast } from 'react-toastify'
+import { exportToCsv } from '../../utils/exportCsv'
 import {
   Shirt, CheckCircle2, PackageX, AlertTriangle, Clock, FileText,
   Plus, FileSpreadsheet, RefreshCw, Search, Copy, Pencil, Check, Ban,
@@ -44,6 +45,8 @@ const ProductManagement = ({ token }) => {
   }
   useEffect(() => { load() }, [])
 
+  const exportExcel = () => filtered.length ? exportToCsv('products', filtered.map((r) => ({ Name: r.name, 'Product Code': r.productCode || '', Category: r.category || '', Status: r.status, Stock: r.totalStock ?? '', MRP: r.price ?? '', Added: r.date ? new Date(r.date).toLocaleDateString('en-IN') : '' }))) : toast.error('No products to export')
+
   const stats = useMemo(() => {
     const now = Date.now(), month = 30 * 864e5
     return {
@@ -80,7 +83,7 @@ const ProductManagement = ({ token }) => {
         <div className='flex items-center gap-2'>
           <button onClick={() => navigate('/products/details')} className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileText size={15} /> Product Details</button>
           <button onClick={() => navigate('/products/add')} className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'><Plus size={15} /> Add / Edit Product</button>
-          <button className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
+          <button onClick={exportExcel} className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
           <button onClick={load} className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><RefreshCw size={15} /> Refresh</button>
         </div>
       </div>

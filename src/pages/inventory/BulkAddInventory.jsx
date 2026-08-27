@@ -34,7 +34,6 @@ const BulkAddInventory = ({ token }) => {
 
   const addToList = () => {
     if (!form.code) return toast.error('Select a product code')
-    if (!form.name.trim()) return toast.error('Enter a product name')
     if (form.mrp === '') return toast.error('Enter the MRP')
     setItems((list) => [...list, form])
     setForm(blankForm())
@@ -42,14 +41,15 @@ const BulkAddInventory = ({ token }) => {
   const removeItem = (i) => setItems((list) => list.filter((_, idx) => idx !== i))
 
   const submitAll = async () => {
-    if (!items.length) return toast.error('Add at least one product to the list')
-    const products = items.map((r) => ({ name: r.name, price: r.mrp, productCode: r.code, category: r.category || 'Uncategorized', subCategory: r.subCategory || 'General', fabric: r.fabric || undefined, lowStockThreshold: Number(r.lowStock) || 5, brand: 'LOCOXO', variants: [{ size: r.size, color: r.color, stock: Number(r.stock) || 0 }] }))
+    if (!items.length) return toast.error('Add at least one inventory item to the list')
+    // Writes INVENTORY (stock by product code) — kept separate from products.
+    const payload = items.map((r) => ({ productCode: r.code, name: r.name || undefined, category: r.category || undefined, subCategory: r.subCategory || undefined, childCategory: r.childCategory || undefined, fabric: r.fabric || undefined, size: r.size, color: r.color, stock: Number(r.stock) || 0, mrp: Number(r.mrp) || 0, lowStockThreshold: Number(r.lowStock) || 5 }))
     const fd = new FormData()
-    fd.append('products', JSON.stringify(products))
+    fd.append('items', JSON.stringify(payload))
     items.forEach((r, i) => { if (r.image) fd.append(`image_${i}`, r.image) })
     setBusy(true)
     try {
-      const { data } = await axios.post(backendUrl + '/api/inventory/bulk-add', fd, { headers: { token } })
+      const { data } = await axios.post(backendUrl + '/api/inventory/items/bulk-add', fd, { headers: { token } })
       if (data.success) { toast.success(data.message); setItems([]); setForm(blankForm()); loadCodes() }
       else toast.error(data.message)
     } catch (err) { toast.error(err.response?.data?.message || err.message) }
@@ -62,15 +62,15 @@ const BulkAddInventory = ({ token }) => {
     <div className='p-6'>
       <div className='flex items-start justify-between mb-5'>
         <div>
-          <h1 className='text-2xl font-heading font-extrabold text-fg'>Bulk Add Products</h1>
-          <p className='text-xs text-muted mt-1'>Dashboard <span className='text-faint'>›</span> Inventory <span className='text-faint'>›</span> Products <span className='text-faint'>›</span> Bulk Add</p>
+          <h1 className='text-2xl font-heading font-extrabold text-fg'>Bulk Add Inventory</h1>
+          <p className='text-xs text-muted mt-1'>Dashboard <span className='text-faint'>›</span> Inventory <span className='text-faint'>›</span> Bulk Add</p>
         </div>
         <button onClick={() => navigate('/inventory')} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'><ArrowLeft size={15} /> Back to Inventory</button>
       </div>
 
       {/* Entry form — all product fields */}
       <div className='glass rounded-2xl p-6 mb-5'>
-        <h2 className='text-lg font-heading font-bold text-fg mb-5'>Product Details</h2>
+        <h2 className='text-lg font-heading font-bold text-fg mb-5'>Inventory Item Details</h2>
         <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4'>
           <div>
             <label className={lbl}>Product Code</label>
@@ -125,7 +125,7 @@ const BulkAddInventory = ({ token }) => {
               </tr>
             </thead>
             <tbody>
-              {shown.length === 0 ? <tr><td colSpan={11} className='py-10 text-center text-muted'>No products added yet — fill the form above and click “Add to List”.</td></tr> :
+              {shown.length === 0 ? <tr><td colSpan={11} className='py-10 text-center text-muted'>No inventory items added yet — fill the form above and click “Add to List”.</td></tr> :
                 shown.map((r, i) => (
                   <tr key={i} className='border-b border-line/70'>
                     <td className='py-2.5 px-2 text-muted'>{i + 1}</td>
@@ -144,7 +144,7 @@ const BulkAddInventory = ({ token }) => {
             </tbody>
           </table>
         </div>
-        <p className='text-xs text-muted mt-3'>Showing {shown.length} of {items.length} items</p>
+        <p className='text-xs text-muted mt-3'>Showing {shown.length} of {items.length} inventory items</p>
       </div>
     </div>
   )

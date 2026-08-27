@@ -150,17 +150,23 @@ const Categories = ({ token }) => {
                           </div>
                         </td>
                         <td className='py-3 px-3'><p className='font-semibold text-fg'>{r.main?.name || '—'}</p><p className='text-[11px] text-muted'>( ID: {r.main?.code || '—'} )</p></td>
-                        {/* Sub Category — name + a + to add a sub under this main */}
+                        {/* Sub Category — name (with edit) + a + to add a sub under this main */}
                         <td className='py-3 px-3'>
                           <div className='flex flex-col gap-1.5 items-start'>
-                            <div><p className='text-fg'>{r.sub?.name || '—'}</p>{r.sub && <p className='text-[11px] text-muted'>( ID: {r.sub.code} )</p>}</div>
+                            <div className='flex items-center gap-1.5'>
+                              <div><p className='text-fg'>{r.sub?.name || '—'}</p>{r.sub && <p className='text-[11px] text-muted'>( ID: {r.sub.code} )</p>}</div>
+                              {r.sub && <button onClick={() => setModal({ kind: 'sub', editNode: r.sub, parentName: r.main.name })} title='Edit sub category' className='grid place-items-center w-6 h-6 rounded-md border border-line text-accent hover:bg-accent/5'><Pencil size={12} /></button>}
+                            </div>
                             <AddPill label='Sub' onClick={() => setModal({ parentId: r.main._id, parentName: r.main.name, kind: 'sub' })} />
                           </div>
                         </td>
-                        {/* Child Category — name + a + to add a child under this sub */}
+                        {/* Child Category — name (with edit) + a + to add a child under this sub */}
                         <td className='py-3 px-3'>
                           <div className='flex flex-col gap-1.5 items-start'>
-                            <div><p className='text-fg'>{r.child?.name || '—'}</p>{r.child && <p className='text-[11px] text-muted'>( ID: {r.child.code} )</p>}</div>
+                            <div className='flex items-center gap-1.5'>
+                              <div><p className='text-fg'>{r.child?.name || '—'}</p>{r.child && <p className='text-[11px] text-muted'>( ID: {r.child.code} )</p>}</div>
+                              {r.child && <button onClick={() => setModal({ kind: 'child', editNode: r.child, parentName: r.sub?.name })} title='Edit child category' className='grid place-items-center w-6 h-6 rounded-md border border-line text-accent hover:bg-accent/5'><Pencil size={12} /></button>}
+                            </div>
                             {r.sub && <AddPill label='Child' onClick={() => setModal({ parentId: r.sub._id, parentName: r.sub.name, kind: 'child' })} />}
                           </div>
                         </td>
@@ -207,12 +213,14 @@ const Categories = ({ token }) => {
   )
 }
 
-// Modal to add a sub- or child-category under a chosen parent.
+// Modal to add OR edit a sub- / child-category.
 const AddSubModal = ({ token, info, onClose, onSaved }) => {
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
-  const [order, setOrder] = useState('')
-  const [status, setStatus] = useState('active')
+  const editing = info.editNode
+  const kindLabel = info.kind === 'sub' ? 'Sub' : 'Child'
+  const [name, setName] = useState(editing?.name || '')
+  const [slug, setSlug] = useState(editing?.slug || '')
+  const [order, setOrder] = useState(editing?.displayOrder ?? '')
+  const [status, setStatus] = useState(editing?.status || 'active')
   const [image, setImage] = useState(null)
   const [busy, setBusy] = useState(false)
   const inp = 'w-full px-3.5 py-2.5 text-sm rounded-xl bg-white border border-line focus:border-accent outline-none'
@@ -224,12 +232,17 @@ const AddSubModal = ({ token, info, onClose, onSaved }) => {
       const fd = new FormData()
       fd.append('name', name)
       fd.append('slug', slug || slugify(name))
-      fd.append('parentCategory', info.parentId)
       fd.append('displayOrder', order || 0)
       fd.append('status', status)
       if (image) fd.append('image', image)
-      const { data } = await axios.post(`${backendUrl}/api/category/add`, fd, { headers: { token } })
-      if (data.success) { toast.success(`${info.kind === 'sub' ? 'Sub' : 'Child'} category added`); onSaved() }
+      let data
+      if (editing) {
+        ({ data } = await axios.put(`${backendUrl}/api/category/update/${editing._id}`, fd, { headers: { token } }))
+      } else {
+        fd.append('parentCategory', info.parentId)
+        ;({ data } = await axios.post(`${backendUrl}/api/category/add`, fd, { headers: { token } }))
+      }
+      if (data.success) { toast.success(`${kindLabel} category ${editing ? 'updated' : 'added'}`); onSaved() }
       else toast.error(data.message)
     } catch (err) { toast.error(err.response?.data?.message || err.message) }
     finally { setBusy(false) }
@@ -240,10 +253,10 @@ const AddSubModal = ({ token, info, onClose, onSaved }) => {
       <div className='fixed inset-0 bg-black/40' onClick={onClose} />
       <div className='relative w-full max-w-md glass rounded-2xl p-6 bg-white shadow-2xl'>
         <div className='flex items-center justify-between mb-1'>
-          <h3 className='text-lg font-heading font-bold text-fg'>Add {info.kind === 'sub' ? 'Sub' : 'Child'} Category</h3>
+          <h3 className='text-lg font-heading font-bold text-fg'>{editing ? 'Edit' : 'Add'} {kindLabel} Category</h3>
           <button onClick={onClose} className='grid place-items-center w-8 h-8 rounded-lg text-muted hover:bg-surface-2'><X size={16} /></button>
         </div>
-        <p className='text-xs text-muted mb-4'>Under <span className='font-semibold text-fg'>{info.parentName}</span></p>
+        <p className='text-xs text-muted mb-4'>{editing ? 'Editing' : 'Under'} <span className='font-semibold text-fg'>{editing ? editing.name : info.parentName}</span></p>
 
         <div className='space-y-3'>
           <div><label className='block text-sm font-semibold text-fg mb-1.5'>Name <span className='text-danger'>*</span></label><input value={name} onChange={(e) => { setName(e.target.value); setSlug(slugify(e.target.value)) }} className={inp} placeholder='e.g. Oversized' /></div>
@@ -264,7 +277,7 @@ const AddSubModal = ({ token, info, onClose, onSaved }) => {
 
         <div className='flex items-center justify-end gap-2 mt-5'>
           <button onClick={onClose} className='px-5 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'>Cancel</button>
-          <button onClick={save} disabled={busy} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'>{busy ? 'Saving…' : 'Add'}</button>
+          <button onClick={save} disabled={busy} className='px-6 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'>{busy ? 'Saving…' : editing ? 'Update' : 'Add'}</button>
         </div>
       </div>
     </div>

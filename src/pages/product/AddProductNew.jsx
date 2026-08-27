@@ -26,8 +26,12 @@ const AddProductNew = ({ token }) => {
   const [colours, setColours] = useState([])
   const [busy, setBusy] = useState(false)
 
-  // Load the Product Code registry (only unused codes are offered).
-  useEffect(() => { axios.get(backendUrl + '/api/inventory/product-code', { headers: { token } }).then(({ data }) => data.success && setCodes(data.rows.filter((r) => !r.used))).catch(() => {}) }, [])
+  // A product can only be built from a product code that HAS inventory (stock).
+  useEffect(() => {
+    axios.get(backendUrl + '/api/inventory/codes-with-stock', { headers: { token } })
+      .then(({ data }) => data.success && setCodes((data.codes || []).map((c) => ({ _id: c.productCode, code: c.productCode, category: c.category, subCategory: c.subCategory, childCategory: c.childCategory, fabric: c.fabric, totalStock: c.totalStock }))))
+      .catch(() => {})
+  }, [])
 
   // Selecting a product code auto-fills its category chain + fabric.
   const pickCode = (code) => {
@@ -105,8 +109,9 @@ const AddProductNew = ({ token }) => {
             <label className={lbl}>Product Code {req}</label>
             <select value={nextCode} onChange={(e) => pickCode(e.target.value)} className={inp + ' font-mono font-bold'}>
               <option value=''>— Select product code —</option>
-              {codes.map((c) => <option key={c._id} value={c.code}>{c.code} · {[c.category, c.subCategory, c.childCategory].filter(Boolean).join(' › ')}</option>)}
+              {codes.map((c) => <option key={c._id} value={c.code}>{c.code} · {[c.category, c.subCategory, c.childCategory].filter(Boolean).join(' › ')} (stock: {c.totalStock})</option>)}
             </select>
+            {codes.length === 0 && <p className='text-[11px] text-amber mt-1'>No product codes have inventory yet. Add stock in <b>Inventory → Add Inventory</b> first.</p>}
             {nextCode ? <p className='text-[11px] text-muted mt-1'>Category: <span className='text-fg font-semibold'>{[basic.category, basic.subCategory, basic.childCategory].filter(Boolean).join(' › ') || '—'}</span>{basic.fabric ? ` · Fabric: ${basic.fabric}` : ''}</p>
               : <p className='text-[11px] text-muted mt-1'>Pick a code created in Inventory → Create Product Code.</p>}
           </div>

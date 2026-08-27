@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import { backendUrl, currency } from '../App'
 import { toast } from 'react-toastify'
+import { exportToCsv } from '../utils/exportCsv'
 import {
   Users, UserCheck, UserX, IndianRupee, TrendingUp, FileSpreadsheet, Plus, Search,
   Filter, Copy, Eye, Pencil, Trash2, MoreVertical, X, Camera, Eye as EyeIcon, EyeOff,
@@ -31,6 +32,7 @@ const Influencers = ({ token }) => {
 
   const setStatus = async (id, status) => { try { await axios.put(`${backendUrl}/api/influencer/${id}`, { status }, { headers: { token } }); load() } catch { toast.error('Failed') } }
   const del = async (id) => { if (!window.confirm('Delete this influencer?')) return; try { await axios.delete(`${backendUrl}/api/influencer/${id}`, { headers: { token } }); toast.success('Deleted'); load() } catch { toast.error('Failed') } }
+  const exportExcel = () => rows.length ? exportToCsv('influencers', rows.map((r) => ({ Name: r.name, Email: r.email, Phone: r.phone || '', Code: r.referralCode || r.code || '', Type: r.type || '', Status: r.status || '' }))) : toast.error('No influencers to export')
   const sel = 'px-3 py-2.5 text-sm rounded-xl bg-white border border-line text-fg focus:border-accent outline-none'
 
   return (
@@ -38,7 +40,7 @@ const Influencers = ({ token }) => {
       <div className='flex items-start justify-between mb-5'>
         <div><h1 className='text-2xl font-heading font-extrabold text-fg'>Influencer Management</h1><p className='text-sm text-muted'>Manage influencers, commission, codes and performance.</p></div>
         <div className='flex items-center gap-2'>
-          <button className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
+          <button onClick={exportExcel} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
           <button onClick={() => { setEditing(null); setShowAdd(true) }} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'><Plus size={15} /> Add Influencer</button>
         </div>
       </div>

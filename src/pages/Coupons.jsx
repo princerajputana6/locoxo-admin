@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { backendUrl, currency } from '../App'
 import { toast } from 'react-toastify'
+import { exportToCsv } from '../utils/exportCsv'
 import { RefreshCw, FileSpreadsheet, Search, Filter, Pencil, Trash2 } from 'lucide-react'
 
 const lbl = 'block text-sm font-semibold text-fg mb-1.5'
@@ -42,6 +43,8 @@ const Coupons = ({ token }) => {
   const load = async () => { try { const { data } = await axios.get(`${backendUrl}/api/coupon/list`, { headers: { token } }); if (data.success) setCoupons(data.coupons) } catch { toast.error('Failed to load coupons') } }
   useEffect(() => { load() }, [])
 
+  const exportExcel = () => rows.length ? exportToCsv('coupons', rows.map((c) => ({ Name: c.name || '', Code: c.code, Type: c.discountType, Value: c.discountValue, 'Valid From': c.validFrom || '', 'Valid Until': c.validUntil || '', Status: c.status || '' }))) : toast.error('No coupons to export')
+
   const save = async () => {
     if (!f.name.trim() || !f.code.trim()) return toast.error('Name and code are required')
     if (!f.validFrom || !f.validUntil) return toast.error('Start and expiry dates are required')
@@ -66,7 +69,7 @@ const Coupons = ({ token }) => {
     <div className='p-6'>
       <div className='flex items-start justify-between mb-5'>
         <div><h1 className='text-2xl font-heading font-extrabold text-fg'>Coupon / Promo Management</h1><p className='text-xs text-muted mt-1'>Dashboard <span className='text-faint'>›</span> Coupons / Promos <span className='text-faint'>›</span> Add Coupon</p></div>
-        <div className='flex items-center gap-2'><button onClick={load} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><RefreshCw size={15} /> Refresh</button><button className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button></div>
+        <div className='flex items-center gap-2'><button onClick={load} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><RefreshCw size={15} /> Refresh</button><button onClick={exportExcel} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button></div>
       </div>
 
       {/* Create form */}

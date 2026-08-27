@@ -3,6 +3,7 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { backendUrl } from '../../App'
 import { toast } from 'react-toastify'
+import { exportToCsv } from '../../utils/exportCsv'
 import { ArrowLeft, Plus, RefreshCw, FileSpreadsheet, Search, Pencil, Trash2 } from 'lucide-react'
 
 const inp = 'w-full px-3.5 py-2.5 text-sm rounded-xl bg-white border border-line focus:border-accent outline-none'
@@ -26,6 +27,8 @@ const CreateProductCode = ({ token }) => {
   const loadRows = () => axios.get(backendUrl + '/api/inventory/product-code', { headers: { token } }).then(({ data }) => data.success && setRows(data.rows)).catch(() => {})
   const loadTree = () => axios.get(backendUrl + '/api/category/tree', { headers: { token } }).then(({ data }) => data.success && setTree(data.tree)).catch(() => {})
   useEffect(() => { loadNext(); loadRows(); loadTree() }, [])
+
+  const exportExcel = () => rows.length ? exportToCsv('product-codes', rows.map((r) => ({ 'Product Code': r.code, Category: [r.category, r.subCategory, r.childCategory].filter(Boolean).join(' > '), Fabric: r.fabric || '', Description: r.shortDescription || '' }))) : toast.error('No product codes to export')
 
   // Cascading options from the real category tree.
   const catNode = useMemo(() => tree.find((c) => c._id === cat), [tree, cat])
@@ -127,7 +130,7 @@ const CreateProductCode = ({ token }) => {
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder='Search by Product Code, Category…' className='w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-white border border-line' />
           </div>
           <div className='flex items-center gap-2'>
-            <button className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
+            <button onClick={exportExcel} className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
             <button onClick={loadRows} className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><RefreshCw size={15} /> Refresh</button>
           </div>
         </div>
