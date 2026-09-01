@@ -129,8 +129,31 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
   const [products, setProducts] = useState([])
   const [pquery, setPquery] = useState('')
   const [busy, setBusy] = useState(false)
+  // Content type + layout/placement + category cards + combos
+  const [contentType, setContentType] = useState(initial?.contentType || 'products')
+  const [layout, setLayout] = useState(initial?.layout || 'grid')
+  const [cardsDesktop, setCardsDesktop] = useState(initial?.cardsDesktop || 4)
+  const [cardsTablet, setCardsTablet] = useState(initial?.cardsTablet || 3)
+  const [cardsMobile, setCardsMobile] = useState(initial?.cardsMobile || 2)
+  const [allCats, setAllCats] = useState([])
+  const [cardCats, setCardCats] = useState(initial?.categories || [])
+  const [combos, setCombos] = useState((initial?.combos || []).map((c) => ({ ...c, products: (c.products || []).map((p) => (typeof p === 'string' ? p : p._id)) })))
+  const [combo, setCombo] = useState({ name: '', image: '', price: '', mrp: '', products: [] })
 
-  useEffect(() => { axios.get(backendUrl + '/api/product/list?limit=500&all=true').then(({ data }) => data.success && setProducts(data.products)).catch(() => {}) }, [])
+  useEffect(() => {
+    axios.get(backendUrl + '/api/product/list?limit=500&all=true').then(({ data }) => data.success && setProducts(data.products)).catch(() => {})
+    axios.get(backendUrl + '/api/category/list?status=active').then(({ data }) => data.success && setAllCats(data.categories || [])).catch(() => {})
+  }, [])
+
+  // Category cards
+  const addCatCard = (c) => setCardCats((list) => list.some((x) => x.name === c.name) ? list : [...list, { name: c.name, image: c.image || '', url: `/collection?category=${encodeURIComponent(c.name)}` }])
+  const updCatCard = (i, f, v) => setCardCats((list) => list.map((x, idx) => idx === i ? { ...x, [f]: v } : x))
+  const rmCatCard = (i) => setCardCats((list) => list.filter((_, idx) => idx !== i))
+  // Combos
+  const comboToggle = (id) => setCombo((c) => ({ ...c, products: c.products.includes(id) ? c.products.filter((x) => x !== id) : [...c.products, id] }))
+  const addCombo = () => { if (!combo.name.trim() || combo.products.length === 0) return toast.error('Combo needs a name and at least one product'); setCombos((l) => [...l, combo]); setCombo({ name: '', image: '', price: '', mrp: '', products: [] }) }
+  const rmCombo = (i) => setCombos((l) => l.filter((_, idx) => idx !== i))
+  const pName = (id) => products.find((p) => p._id === id)?.name || id
 
   const filteredProducts = useMemo(() => {
     const q = pquery.trim().toLowerCase()
@@ -148,6 +171,10 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
       fd.append('link', link); fd.append('status', status)
       fd.append('scheduleStart', scheduleStart); fd.append('scheduleEnd', scheduleEnd)
       fd.append('products', JSON.stringify(selected))
+      fd.append('contentType', contentType); fd.append('layout', layout)
+      fd.append('cardsDesktop', cardsDesktop); fd.append('cardsTablet', cardsTablet); fd.append('cardsMobile', cardsMobile)
+      fd.append('categories', JSON.stringify(cardCats))
+      fd.append('combos', JSON.stringify(combos.map((c) => ({ name: c.name, image: c.image, price: Number(c.price) || undefined, mrp: Number(c.mrp) || undefined, products: c.products }))))
       banners.forEach((f) => fd.append('bannerImages', f))
       if (mobile) fd.append('bannerMobile', mobile)
       if (thumb) fd.append('thumbnail', thumb)
@@ -202,7 +229,78 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
           <Pick label='Video' file={video} onPick={setVideo} />
         </div>
 
+        {/* Content type + layout + card placement */}
+        <div className='rounded-xl border border-line p-3 bg-surface-2/40'>
+          <div className='grid sm:grid-cols-4 gap-3'>
+            <div><label className={lbl}>Section shows</label><select value={contentType} onChange={(e) => setContentType(e.target.value)} className={inp}><option value='products'>Products</option><option value='categories'>Categories</option><option value='combo'>Combos</option></select></div>
+            <div><label className={lbl}>Layout</label><select value={layout} onChange={(e) => setLayout(e.target.value)} className={inp}><option value='grid'>Grid</option><option value='slider'>Slider</option></select></div>
+            <div><label className={lbl}>Cards / row</label>
+              <div className='flex items-center gap-1'>
+                <input type='number' min='1' max='8' value={cardsDesktop} onChange={(e) => setCardsDesktop(e.target.value)} className={inp + ' text-center'} title='Desktop' />
+                <input type='number' min='1' max='6' value={cardsTablet} onChange={(e) => setCardsTablet(e.target.value)} className={inp + ' text-center'} title='Tablet' />
+                <input type='number' min='1' max='4' value={cardsMobile} onChange={(e) => setCardsMobile(e.target.value)} className={inp + ' text-center'} title='Mobile' />
+              </div>
+              <p className='text-[10px] text-muted mt-1'>Desktop · Tablet · Mobile</p>
+            </div>
+            <div className='text-[11px] text-muted self-end pb-2'>{layout === 'slider' ? 'Cards scroll horizontally.' : 'Cards wrap in a grid.'}</div>
+          </div>
+        </div>
+
+        {/* Category cards picker */}
+        {contentType === 'categories' && (
+          <div>
+            <span className={lbl}>Category cards ({cardCats.length})</span>
+            <div className='flex flex-wrap gap-1.5 mb-2'>
+              {allCats.map((c) => <button type='button' key={c._id} onClick={() => addCatCard(c)} className='px-2.5 py-1 text-xs rounded-lg border border-line bg-surface-2 hover:border-accent/40 text-fg'>+ {c.name}</button>)}
+            </div>
+            <div className='space-y-2'>
+              {cardCats.map((cc, i) => (
+                <div key={i} className='flex items-center gap-2 rounded-lg border border-line p-2'>
+                  <img src={cc.image || 'https://placehold.co/40'} alt='' className='w-9 h-9 rounded object-cover border border-line' />
+                  <span className='font-semibold text-fg text-sm w-28 truncate'>{cc.name}</span>
+                  <input value={cc.image} onChange={(e) => updCatCard(i, 'image', e.target.value)} placeholder='Image URL' className='flex-1 px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
+                  <input value={cc.url} onChange={(e) => updCatCard(i, 'url', e.target.value)} placeholder='Link URL' className='flex-1 px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
+                  <button type='button' onClick={() => rmCatCard(i)} className='text-danger px-2'>✕</button>
+                </div>
+              ))}
+              {cardCats.length === 0 && <p className='text-xs text-muted'>Click a category above to add it as a card.</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Combo builder */}
+        {contentType === 'combo' && (
+          <div>
+            <span className={lbl}>Combos ({combos.length})</span>
+            {combos.map((c, i) => (
+              <div key={i} className='flex items-center gap-2 rounded-lg border border-line p-2 mb-1.5'>
+                <span className='font-semibold text-fg text-sm flex-1'>{c.name} <span className='text-muted font-normal'>· {c.products.length} items{c.price ? ` · ${currency}${c.price}` : ''}</span></span>
+                <span className='text-[11px] text-muted truncate max-w-[40%]'>{c.products.map(pName).join(', ')}</span>
+                <button type='button' onClick={() => rmCombo(i)} className='text-danger px-2'>✕</button>
+              </div>
+            ))}
+            <div className='rounded-lg border border-dashed border-line p-3 space-y-2'>
+              <div className='grid sm:grid-cols-4 gap-2'>
+                <input value={combo.name} onChange={(e) => setCombo({ ...combo, name: e.target.value })} placeholder='Combo name' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
+                <input value={combo.image} onChange={(e) => setCombo({ ...combo, image: e.target.value })} placeholder='Image URL (optional)' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
+                <input type='number' value={combo.price} onChange={(e) => setCombo({ ...combo, price: e.target.value })} placeholder='Combo price' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
+                <input type='number' value={combo.mrp} onChange={(e) => setCombo({ ...combo, mrp: e.target.value })} placeholder='MRP (optional)' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
+              </div>
+              <div className='grid sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto'>
+                {products.slice(0, 60).map((p) => (
+                  <label key={p._id} className={`flex items-center gap-2 px-2 py-1 rounded-lg border cursor-pointer text-xs ${combo.products.includes(p._id) ? 'border-accent/50 bg-accent/10' : 'border-line bg-surface-2'}`}>
+                    <input type='checkbox' checked={combo.products.includes(p._id)} onChange={() => comboToggle(p._id)} className='accent-accent' />
+                    <span className='truncate'>{p.name}</span>
+                  </label>
+                ))}
+              </div>
+              <button type='button' onClick={addCombo} className='px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent text-white'>+ Add combo</button>
+            </div>
+          </div>
+        )}
+
         {/* Product picker */}
+        {contentType === 'products' && (
         <div>
           <div className='flex items-center justify-between mb-2'>
             <span className={lbl + ' mb-0'}>Products ({selected.length} selected)</span>
@@ -222,6 +320,7 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
             ))}
           </div>
         </div>
+        )}
       </form>
     </Modal>
   )

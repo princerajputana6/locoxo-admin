@@ -33,7 +33,22 @@ const InventoryOverview = ({ token }) => {
   const [editItem, setEditItem] = useState(null)
   const [adjItem, setAdjItem] = useState(null)
   const [open, setOpen] = useState({})   // which product-code accordions are expanded
+  const [sort, setSort] = useState('code-asc')
   const toggle = (code) => setOpen((o) => ({ ...o, [code]: !o[code] }))
+
+  // Sort the product-code groups.
+  const sortedGroups = useMemo(() => {
+    const g = [...groups]
+    const stock = (x) => x.items.reduce((s, it) => s + (it.stock || 0), 0)
+    const cmp = {
+      'code-asc': (a, b) => a.productCode.localeCompare(b.productCode),
+      'code-desc': (a, b) => b.productCode.localeCompare(a.productCode),
+      'stock-desc': (a, b) => stock(b) - stock(a),
+      'stock-asc': (a, b) => stock(a) - stock(b),
+      'variants-desc': (a, b) => b.items.length - a.items.length,
+    }[sort]
+    return g.sort(cmp)
+  }, [groups, sort])
 
   const load = async () => {
     setLoading(true)
@@ -97,14 +112,15 @@ const InventoryOverview = ({ token }) => {
             <div className='flex items-center gap-2'>
               <button onClick={() => setOpen(Object.fromEntries(groups.map((g) => [g.productCode, true])))} className='px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'>Expand all</button>
               <button onClick={() => setOpen({})} className='px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'>Collapse all</button>
+              <select value={sort} onChange={(e) => setSort(e.target.value)} className='px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-line text-fg outline-none'><option value='code-asc'>Code A→Z</option><option value='code-desc'>Code Z→A</option><option value='stock-desc'>Stock high→low</option><option value='stock-asc'>Stock low→high</option><option value='variants-desc'>Most variants</option></select>
             </div>
           )}
         </div>
 
         {loading ? <div className='space-y-3'>{[0, 1, 2].map((i) => <div key={i} className='skeleton h-16 rounded-xl' />)}</div> :
-          groups.length === 0 ? <p className='py-12 text-center text-muted'>No inventory yet. Use <b>Add Inventory</b> to add stock against a product code.</p> :
+          (sortedGroups.length===0) ? <p className='py-12 text-center text-muted'>No inventory yet. Use <b>Add Inventory</b> to add stock against a product code.</p> :
             <div className='space-y-5'>
-              {groups.map((g) => {
+              {sortedGroups.map((g) => {
                 const total = g.items.reduce((s, it) => s + (it.stock || 0), 0)
                 return (
                   <div key={g.productCode} className='rounded-xl border border-line overflow-hidden'>

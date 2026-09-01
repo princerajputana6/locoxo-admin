@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
+import { exportToCsv } from '../utils/exportCsv'
 import {
   Star, RefreshCw, FileSpreadsheet, Search, Filter, Eye, Trash2, MoreHorizontal,
   MessageSquare, ShieldCheck, ImageIcon, Flag, KeyRound, X,
@@ -38,6 +39,7 @@ const Reviews = ({ token }) => {
   const del = async (id) => { if (!window.confirm('Delete this review?')) return; try { await axios.delete(`${backendUrl}/api/review/delete/${id}`, { headers: { token } }); load() } catch { toast.error('Failed') } }
 
   const reviews = data?.reviews || []
+  const exportExcel = () => reviews.length ? exportToCsv('reviews', reviews.map((r) => ({ Product: r.productName || r.product?.name || '', Rating: r.rating, Review: r.comment || r.review || '', Customer: r.userName || r.name || '', Date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : '' }))) : toast.error('No reviews to export')
   const summary = data?.summary; const settings = data?.settings; const reportSummary = data?.reportSummary
   const sel = 'px-3 py-2 text-sm rounded-lg bg-white border border-line text-fg focus:border-accent outline-none'
 
@@ -47,7 +49,7 @@ const Reviews = ({ token }) => {
         <div><h1 className='text-2xl font-heading font-extrabold text-fg'>Rating &amp; Review Management</h1><p className='text-xs text-muted mt-1'>Dashboard <span className='text-faint'>›</span> Reviews <span className='text-faint'>›</span> All Reviews</p></div>
         <div className='flex items-center gap-2'>
           <button onClick={load} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><RefreshCw size={15} /> Refresh</button>
-          <button className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
+          <button onClick={exportExcel} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
         </div>
       </div>
 

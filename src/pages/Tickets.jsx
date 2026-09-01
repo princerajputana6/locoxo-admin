@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
+import { exportToCsv } from '../utils/exportCsv'
 import {
   LifeBuoy, RefreshCw, FileSpreadsheet, Search, Filter, Eye, MoreVertical,
   Inbox, MessageSquare, Loader, CheckCircle2, XCircle, Send, X,
@@ -23,6 +24,7 @@ const StatCard = ({ icon: Icon, label, value, sub, tone }) => {
 
 const Tickets = ({ token }) => {
   const [tickets, setTickets] = useState([])
+  const exportExcel = () => tickets.length ? exportToCsv('tickets', tickets.map((t) => ({ 'Ticket No': t.ticketNumber || t._id, Subject: t.subject || '', Priority: t.priority || '', Status: t.status || '', Customer: t.userName || t.name || '', Date: t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-IN') : '' }))) : toast.error('No tickets to export')
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState(''); const [fStatus, setFStatus] = useState('All'); const [fPrio, setFPrio] = useState('All'); const [fCat, setFCat] = useState('All')
@@ -61,7 +63,7 @@ const Tickets = ({ token }) => {
         <div><h1 className='text-2xl font-heading font-extrabold text-fg'>Raise Ticket Management</h1><p className='text-xs text-muted mt-1'>Dashboard <span className='text-faint'>›</span> Tickets</p></div>
         <div className='flex items-center gap-2'>
           <button onClick={load} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><RefreshCw size={15} /> Refresh</button>
-          <button className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
+          <button onClick={exportExcel} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><FileSpreadsheet size={15} className='text-success' /> Export Excel</button>
         </div>
       </div>
 

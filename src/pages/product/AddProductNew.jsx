@@ -47,6 +47,18 @@ const AddProductNew = ({ token }) => {
   }, [cur.mrp, cur.discount, cur.sellingPrice])
 
   const setC = (f, v) => setCur((c) => ({ ...c, [f]: v }))
+  // Auto discount detection: typing a Selling Price auto-computes the discount %
+  // (and typing MRP recomputes it too), so the admin never has to do the maths.
+  const setSelling = (v) => setCur((c) => {
+    const m = Number(c.mrp), s = Number(v)
+    const discount = m > 0 && s > 0 && s <= m ? String(Math.round(((m - s) / m) * 100)) : c.discount
+    return { ...c, sellingPrice: v, discount }
+  })
+  const setMrp = (v) => setCur((c) => {
+    const m = Number(v), s = Number(c.sellingPrice)
+    const discount = m > 0 && s > 0 && s <= m ? String(Math.round(((m - s) / m) * 100)) : c.discount
+    return { ...c, mrp: v, discount }
+  })
   const toggleSize = (s) => setCur((c) => ({ ...c, sizes: c.sizes.includes(s) ? c.sizes.filter((x) => x !== s) : [...c.sizes, s] }))
   const onImages = (e) => { const files = [...e.target.files].filter((f) => f.type.startsWith('image/')); setCur((c) => ({ ...c, images: [...c.images, ...files].slice(0, 10) })); e.target.value = '' }
   const onVideos = (e) => { const files = [...e.target.files].filter((f) => f.type.startsWith('video/')); setCur((c) => ({ ...c, videos: [...c.videos, ...files].slice(0, 3) })); e.target.value = '' }
@@ -143,14 +155,14 @@ const AddProductNew = ({ token }) => {
             </div>
             <p className='text-[11px] text-muted mt-1'>Add product details, images and videos for each colour.</p>
           </div>
-          <div><label className={lbl}>MRP ({currency}) {req}</label><input type='number' value={cur.mrp} onChange={(e) => setC('mrp', e.target.value)} className={inp} placeholder='Enter MRP' /></div>
+          <div><label className={lbl}>MRP ({currency}) {req}</label><input type='number' value={cur.mrp} onChange={(e) => setMrp(e.target.value)} className={inp} placeholder='Enter MRP' /></div>
           <div>
             <label className={lbl}>Size {req}</label>
             <div className='flex flex-wrap gap-1.5'>{SIZES.map((s) => <button key={s} type='button' onClick={() => toggleSize(s)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${cur.sizes.includes(s) ? 'bg-accent text-white border-accent' : 'bg-white border-line text-muted hover:border-accent/50'}`}>{s}</button>)}</div>
           </div>
           <div className='grid grid-cols-2 gap-3'>
-            <div><label className={lbl}>Selling Price ({currency}) {req}</label><input type='number' value={cur.sellingPrice} onChange={(e) => setC('sellingPrice', e.target.value)} className={inp} placeholder='Enter selling price' /></div>
-            <div><label className={lbl}>Discount (%)</label><input type='number' value={cur.discount} onChange={(e) => setC('discount', e.target.value)} className={inp} placeholder='%' /></div>
+            <div><label className={lbl}>Selling Price ({currency}) {req}</label><input type='number' value={cur.sellingPrice} onChange={(e) => setSelling(e.target.value)} className={inp} placeholder='Enter selling price' /></div>
+            <div><label className={lbl}>Discount (%) <span className='text-[10px] font-normal text-success'>auto</span></label><input type='number' value={cur.discount} onChange={(e) => setC('discount', e.target.value)} className={inp} placeholder='auto from MRP & selling price' /></div>
           </div>
           <div><label className={lbl}>Product Description {req}</label><textarea value={cur.description} onChange={(e) => setC('description', e.target.value)} className={inp + ' h-24 resize-none'} placeholder='Write product description…' /></div>
           <div className='rounded-xl bg-accent/5 border border-accent/20 p-3 self-end text-sm text-muted flex items-center gap-2'>🧮 Discounted price: <span className='font-bold text-accent'>{discountedPrice ? `${currency}${discountedPrice}` : '—'}</span> (calculated automatically)</div>

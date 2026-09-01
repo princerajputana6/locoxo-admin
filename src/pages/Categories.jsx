@@ -156,6 +156,7 @@ const Categories = ({ token }) => {
                             <div className='flex items-center gap-1.5'>
                               <div><p className='text-fg'>{r.sub?.name || '—'}</p>{r.sub && <p className='text-[11px] text-muted'>( ID: {r.sub.code} )</p>}</div>
                               {r.sub && <button onClick={() => setModal({ kind: 'sub', editNode: r.sub, parentName: r.main.name })} title='Edit sub category' className='grid place-items-center w-6 h-6 rounded-md border border-line text-accent hover:bg-accent/5'><Pencil size={12} /></button>}
+                              {r.sub && <button onClick={() => remove(r.sub)} title='Delete sub category' className='grid place-items-center w-6 h-6 rounded-md border border-line text-danger hover:bg-danger/5'><Trash2 size={12} /></button>}
                             </div>
                             <AddPill label='Sub' onClick={() => setModal({ parentId: r.main._id, parentName: r.main.name, kind: 'sub' })} />
                           </div>
@@ -166,6 +167,7 @@ const Categories = ({ token }) => {
                             <div className='flex items-center gap-1.5'>
                               <div><p className='text-fg'>{r.child?.name || '—'}</p>{r.child && <p className='text-[11px] text-muted'>( ID: {r.child.code} )</p>}</div>
                               {r.child && <button onClick={() => setModal({ kind: 'child', editNode: r.child, parentName: r.sub?.name })} title='Edit child category' className='grid place-items-center w-6 h-6 rounded-md border border-line text-accent hover:bg-accent/5'><Pencil size={12} /></button>}
+                              {r.child && <button onClick={() => remove(r.child)} title='Delete child category' className='grid place-items-center w-6 h-6 rounded-md border border-line text-danger hover:bg-danger/5'><Trash2 size={12} /></button>}
                             </div>
                             {r.sub && <AddPill label='Child' onClick={() => setModal({ parentId: r.sub._id, parentName: r.sub.name, kind: 'child' })} />}
                           </div>
