@@ -135,6 +135,7 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
   const [cardsDesktop, setCardsDesktop] = useState(initial?.cardsDesktop || 4)
   const [cardsTablet, setCardsTablet] = useState(initial?.cardsTablet || 3)
   const [cardsMobile, setCardsMobile] = useState(initial?.cardsMobile || 2)
+  const [heroSlides, setHeroSlides] = useState((initial?.heroSlides || [3, 1, 2]).join(', '))
   const [allCats, setAllCats] = useState([])
   const [cardCats, setCardCats] = useState(initial?.categories || [])
   const [combos, setCombos] = useState((initial?.combos || []).map((c) => ({ ...c, products: (c.products || []).map((p) => (typeof p === 'string' ? p : p._id)) })))
@@ -174,6 +175,7 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
       fd.append('contentType', contentType); fd.append('layout', layout)
       fd.append('cardsDesktop', cardsDesktop); fd.append('cardsTablet', cardsTablet); fd.append('cardsMobile', cardsMobile)
       fd.append('categories', JSON.stringify(cardCats))
+      fd.append('heroSlides', JSON.stringify(heroSlides.split(',').map((n) => Number(n.trim())).filter((n) => n > 0)))
       fd.append('combos', JSON.stringify(combos.map((c) => ({ name: c.name, image: c.image, price: Number(c.price) || undefined, mrp: Number(c.mrp) || undefined, products: c.products }))))
       banners.forEach((f) => fd.append('bannerImages', f))
       if (mobile) fd.append('bannerMobile', mobile)
@@ -233,7 +235,8 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
         <div className='rounded-xl border border-line p-3 bg-surface-2/40'>
           <div className='grid sm:grid-cols-4 gap-3'>
             <div><label className={lbl}>Section shows</label><select value={contentType} onChange={(e) => setContentType(e.target.value)} className={inp}><option value='products'>Products</option><option value='categories'>Categories</option><option value='combo'>Combos</option></select></div>
-            <div><label className={lbl}>Layout</label><select value={layout} onChange={(e) => setLayout(e.target.value)} className={inp}><option value='grid'>Grid</option><option value='slider'>Slider</option></select></div>
+            <div><label className={lbl}>Layout</label><select value={layout} onChange={(e) => setLayout(e.target.value)} className={inp}><option value='grid'>Grid</option><option value='slider'>Slider</option><option value='hero'>Hero (full-screen)</option></select></div>
+            {layout === 'hero' && <div><label className={lbl}>Categories per hero slide</label><input value={heroSlides} onChange={(e) => setHeroSlides(e.target.value)} className={inp} placeholder='3, 1, 2' /><p className='text-[10px] text-muted mt-1'>e.g. 3, 1, 2 → slide 1 shows 3, slide 2 shows 1, slide 3 shows 2. Use content type “Categories”.</p></div>}
             <div><label className={lbl}>Cards / row</label>
               <div className='flex items-center gap-1'>
                 <input type='number' min='1' max='8' value={cardsDesktop} onChange={(e) => setCardsDesktop(e.target.value)} className={inp + ' text-center'} title='Desktop' />
