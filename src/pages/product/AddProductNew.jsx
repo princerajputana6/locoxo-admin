@@ -27,6 +27,7 @@ const AddProductNew = ({ token }) => {
   // current colour being edited
   const [cur, setCur] = useState({ color: '', colorCode: '#000000', sizes: [], mrp: '', sellingPrice: '', discount: '', description: '', images: [], videos: [] })
   const [colours, setColours] = useState([])
+  const [editingColourIdx, setEditingColourIdx] = useState(null)
   const [busy, setBusy] = useState(false)
 
   // A product can only be built from a product code that HAS inventory (stock).
@@ -85,15 +86,29 @@ const AddProductNew = ({ token }) => {
   const onImages = (e) => { const files = [...e.target.files].filter((f) => f.type.startsWith('image/')); setCur((c) => ({ ...c, images: [...c.images, ...files].slice(0, 10) })); e.target.value = '' }
   const onVideos = (e) => { const files = [...e.target.files].filter((f) => f.type.startsWith('video/')); setCur((c) => ({ ...c, videos: [...c.videos, ...files].slice(0, 3) })); e.target.value = '' }
 
+  const blankCur = () => ({ color: '', colorCode: '#000000', sizes: [], mrp: '', sellingPrice: '', discount: '', description: '', images: [], imageUrls: [], videos: [], videoUrls: [] })
   const addColour = () => {
     if (!cur.color.trim()) return toast.error('Enter a colour name')
     if (cur.sizes.length === 0) return toast.error('Select at least one size')
     if (!cur.mrp) return toast.error('Enter MRP')
-    setColours((cs) => [...cs, { ...cur, sellingPrice: cur.sellingPrice || discountedPrice }])
-    setCur({ color: '', colorCode: '#000000', sizes: [], mrp: '', sellingPrice: '', discount: '', description: '', images: [], videos: [] })
-    toast.success('Colour added')
+    const row = { ...cur, sellingPrice: cur.sellingPrice || discountedPrice }
+    if (editingColourIdx !== null) {
+      setColours((cs) => cs.map((c, idx) => idx === editingColourIdx ? row : c))
+      toast.success('Colour updated')
+    } else {
+      setColours((cs) => [...cs, row])
+      toast.success('Colour added')
+    }
+    setCur(blankCur()); setEditingColourIdx(null)
   }
-  const removeColour = (i) => setColours((cs) => cs.filter((_, idx) => idx !== i))
+  // Load a colour row into the section-3 form to edit it (existing images kept as imageUrls).
+  const editColour = (i) => {
+    const c = colours[i]
+    setCur({ color: c.color || '', colorCode: c.colorCode || '#000000', sizes: c.sizes || [], mrp: c.mrp ?? '', sellingPrice: c.sellingPrice ?? '', discount: c.discount ?? '', description: c.description || '', images: c.images || [], imageUrls: c.imageUrls || [], videos: c.videos || [], videoUrls: c.videoUrls || [] })
+    setEditingColourIdx(i)
+    document.getElementById('colour-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  const removeColour = (i) => { setColours((cs) => cs.filter((_, idx) => idx !== i)); if (editingColourIdx === i) { setCur(blankCur()); setEditingColourIdx(null) } }
 
   const submit = async (asDraft = false) => {
     if (!basic.name.trim()) return toast.error('Product name is required')
@@ -170,6 +185,7 @@ const AddProductNew = ({ token }) => {
 
       {/* 3. Colour, Pricing & Description */}
       <div className='glass rounded-2xl p-6 mb-5'>
+        <span id='colour-form' />
         <Num n={3}>Product Colour, Pricing &amp; Description</Num>
         <div className='grid md:grid-cols-2 gap-4'>
           <div>
@@ -201,7 +217,10 @@ const AddProductNew = ({ token }) => {
           <div>
             <label className={lbl}>Product Images</label>
             <label className='flex flex-col items-center justify-center gap-1 h-24 rounded-xl border-2 border-dashed border-line bg-surface-2 cursor-pointer hover:border-accent/50'><UploadCloud size={20} className='text-faint' /><span className='text-sm text-muted'>Click to upload or drag and drop</span><span className='text-[10px] text-faint'>JPG, PNG, WEBP (Max. 5MB each)</span><input type='file' accept='image/*' multiple hidden onChange={onImages} /></label>
-            {cur.images.length > 0 && <div className='flex flex-wrap gap-2 mt-2'>{cur.images.map((f, i) => <div key={i} className='relative w-14 h-14 rounded-lg overflow-hidden border border-line'><img src={URL.createObjectURL(f)} alt='' className='w-full h-full object-cover' /><button onClick={() => setC('images', cur.images.filter((_, idx) => idx !== i))} className='absolute top-0.5 right-0.5 w-4 h-4 grid place-items-center rounded-full bg-black/60 text-white'><X size={10} /></button></div>)}</div>}
+            {((cur.imageUrls || []).length > 0 || cur.images.length > 0) && <div className='flex flex-wrap gap-2 mt-2'>
+              {(cur.imageUrls || []).map((u, i) => <div key={'u' + i} className='relative w-14 h-14 rounded-lg overflow-hidden border border-line'><img src={u} alt='' className='w-full h-full object-cover' /><button onClick={() => setC('imageUrls', cur.imageUrls.filter((_, idx) => idx !== i))} className='absolute top-0.5 right-0.5 w-4 h-4 grid place-items-center rounded-full bg-black/60 text-white'><X size={10} /></button></div>)}
+              {cur.images.map((f, i) => <div key={i} className='relative w-14 h-14 rounded-lg overflow-hidden border border-line'><img src={URL.createObjectURL(f)} alt='' className='w-full h-full object-cover' /><button onClick={() => setC('images', cur.images.filter((_, idx) => idx !== i))} className='absolute top-0.5 right-0.5 w-4 h-4 grid place-items-center rounded-full bg-black/60 text-white'><X size={10} /></button></div>)}
+            </div>}
             <p className='text-[11px] text-faint mt-1'>You can upload up to 10 images</p>
           </div>
           <div>
@@ -211,7 +230,10 @@ const AddProductNew = ({ token }) => {
             <p className='text-[11px] text-faint mt-1'>You can upload up to 3 videos</p>
           </div>
         </div>
-        <div className='flex justify-end mt-4'><button onClick={addColour} className='inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-xl border border-accent text-accent hover:bg-accent/5'><Plus size={15} /> Add Different Colour</button></div>
+        <div className='flex justify-end gap-2 mt-4'>
+          {editingColourIdx !== null && <button onClick={() => { setCur(blankCur()); setEditingColourIdx(null) }} className='inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-xl border border-line text-fg hover:bg-surface-2'>Cancel</button>}
+          <button onClick={addColour} className='inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-xl border border-accent text-accent hover:bg-accent/5'><Plus size={15} /> {editingColourIdx !== null ? 'Update Colour' : 'Add Different Colour'}</button>
+        </div>
       </div>
 
       {/* All Colours Added */}
@@ -234,7 +256,7 @@ const AddProductNew = ({ token }) => {
                     <td className='py-2.5 px-3 text-fg'>{c.mrp}</td>
                     <td className='py-2.5 px-3 text-fg'>{c.sellingPrice}</td>
                     <td className='py-2.5 px-3 text-success font-semibold'>{c.discount ? `${c.discount}%` : '—'}</td>
-                    <td className='py-2.5 px-3'><div className='flex gap-1'><button className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent'><Pencil size={13} /></button><button onClick={() => removeColour(i)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-danger'><Trash2 size={13} /></button></div></td>
+                    <td className='py-2.5 px-3'><div className='flex gap-1'><button onClick={() => editColour(i)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent hover:bg-accent/5'><Pencil size={13} /></button><button onClick={() => removeColour(i)} className='grid place-items-center w-8 h-8 rounded-lg border border-line text-danger'><Trash2 size={13} /></button></div></td>
                   </tr>
                 ))}
             </tbody>
