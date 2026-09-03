@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { backendUrl, currency } from '../../App'
 import { toast } from 'react-toastify'
 import { RefreshCw, UploadCloud, Plus, X, Pencil, Trash2, Save, Send, Ruler } from 'lucide-react'
@@ -17,10 +17,13 @@ const PATTERNS = ['Solid', 'Graphic', 'Printed', 'Striped', 'Checked']
 // Add Product — colour-wise builder (image 8).
 const AddProductNew = ({ token }) => {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const editId = params.get('edit')
   const [codes, setCodes] = useState([])
   const [nextCode, setNextCode] = useState('')  // selected product code
   const [basic, setBasic] = useState({ name: '', category: '', subCategory: '', childCategory: '', fabric: '', neckType: '', sleeve: '', pattern: '', status: 'active' })
   const [sizeChart, setSizeChart] = useState(null)
+  const [existingSizeChart, setExistingSizeChart] = useState('')
   // current colour being edited
   const [cur, setCur] = useState({ color: '', colorCode: '#000000', sizes: [], mrp: '', sellingPrice: '', discount: '', description: '', images: [], videos: [] })
   const [colours, setColours] = useState([])
@@ -32,6 +35,25 @@ const AddProductNew = ({ token }) => {
       .then(({ data }) => data.success && setCodes((data.codes || []).map((c) => ({ _id: c.productCode, code: c.productCode, category: c.category, subCategory: c.subCategory, childCategory: c.childCategory, fabric: c.fabric, totalStock: c.totalStock }))))
       .catch(() => {})
   }, [])
+
+  // Edit mode — prefill everything the admin filled during creation.
+  useEffect(() => {
+    if (!editId) return
+    axios.post(backendUrl + '/api/product/single', { productId: editId }, { headers: { token } })
+      .then(({ data }) => {
+        const p = data.product
+        if (!p) return toast.error(data.message || 'Product not found')
+        setBasic({ name: p.name || '', category: p.category || '', subCategory: p.subCategory || '', childCategory: p.childCategory || '', fabric: p.fabric || '', neckType: p.neckType || '', sleeve: p.sleeve || '', pattern: p.pattern || '', status: p.status === 'active' ? 'active' : (p.status || 'active') })
+        setNextCode(p.productCode || '')
+        setExistingSizeChart(p.sizeChart || '')
+        // Prefill colours; existing images become imageUrls (kept on save).
+        const cols = (p.colours && p.colours.length) ? p.colours : [{ color: (p.variants?.[0]?.color) || 'Default', colorCode: p.variants?.[0]?.colorCode || '#000000', sizes: p.sizes || [], mrp: p.price, sellingPrice: p.discountPrice, discount: p.discountPercent, description: p.description, images: p.image || [] }]
+        setColours(cols.map((c) => ({ color: c.color || '', colorCode: c.colorCode || '#000000', sizes: c.sizes || [], mrp: c.mrp ?? '', sellingPrice: c.sellingPrice ?? '', discount: c.discount ?? '', description: c.description || '', images: [], imageUrls: c.images || [], videos: [], videoUrls: c.videos || [] })))
+        // Make sure the product's own code shows in the dropdown even if its inventory is used up.
+        if (p.productCode) setCodes((list) => list.some((x) => x.code === p.productCode) ? list : [{ _id: p.productCode, code: p.productCode, category: p.category, subCategory: p.subCategory, childCategory: p.childCategory, fabric: p.fabric, totalStock: '—' }, ...list])
+      })
+      .catch((err) => toast.error(err.response?.data?.message || 'Failed to load product'))
+  }, [editId])
 
   // Selecting a product code auto-fills its category chain + fabric.
   const pickCode = (code) => {
@@ -84,11 +106,15 @@ const AddProductNew = ({ token }) => {
       fd.append('subCategory', basic.subCategory || 'General')
       fd.append('fabric', basic.fabric); fd.append('neckType', basic.neckType); fd.append('sleeve', basic.sleeve); fd.append('pattern', basic.pattern)
       fd.append('status', asDraft ? 'draft' : basic.status)
-      fd.append('colours', JSON.stringify(all.map((c) => ({ color: c.color, colorCode: c.colorCode, sizes: c.sizes, mrp: c.mrp, sellingPrice: c.sellingPrice, discount: c.discount, description: c.description, stock: 0 }))))
-      all.forEach((c, ci) => { c.images.forEach((f, ii) => fd.append(`c${ci}_img${ii}`, f)); c.videos.forEach((f, vi) => fd.append(`c${ci}_vid${vi}`, f)) })
+      fd.append('childCategory', basic.childCategory || '')
+      // Keep existing colour images/videos (imageUrls/videoUrls) and append new files.
+      fd.append('colours', JSON.stringify(all.map((c) => ({ color: c.color, colorCode: c.colorCode, sizes: c.sizes, mrp: c.mrp, sellingPrice: c.sellingPrice, discount: c.discount, description: c.description, stock: 0, imageUrls: c.imageUrls || [], videoUrls: c.videoUrls || [] }))))
+      all.forEach((c, ci) => { (c.images || []).forEach((f, ii) => fd.append(`c${ci}_img${ii}`, f)); (c.videos || []).forEach((f, vi) => fd.append(`c${ci}_vid${vi}`, f)) })
       if (sizeChart) fd.append('sizeChart', sizeChart)
-      const { data } = await axios.post(backendUrl + '/api/product/add-colourwise', fd, { headers: { token } })
-      if (data.success) { toast.success(`${data.message} — ${data.productCode || ''}`); navigate('/products') }
+      const { data } = editId
+        ? await axios.put(`${backendUrl}/api/product/update-colourwise/${editId}`, fd, { headers: { token } })
+        : await axios.post(backendUrl + '/api/product/add-colourwise', fd, { headers: { token } })
+      if (data.success) { toast.success(editId ? 'Product updated' : `${data.message} — ${data.productCode || ''}`); navigate('/products') }
       else toast.error(data.message)
     } catch (err) { toast.error(err.response?.data?.message || err.message) }
     finally { setBusy(false) }
@@ -100,8 +126,8 @@ const AddProductNew = ({ token }) => {
     <div className='p-6'>
       <div className='flex items-start justify-between mb-5'>
         <div>
-          <h1 className='text-2xl font-heading font-extrabold text-fg'>Add Product</h1>
-          <p className='text-xs text-muted mt-1'>Dashboard <span className='text-faint'>›</span> Products <span className='text-faint'>›</span> Add Product</p>
+          <h1 className='text-2xl font-heading font-extrabold text-fg'>{editId ? 'Edit Product' : 'Add Product'}</h1>
+          <p className='text-xs text-muted mt-1'>Dashboard <span className='text-faint'>›</span> Products <span className='text-faint'>›</span> {editId ? 'Edit' : 'Add'} Product</p>
         </div>
         <button onClick={() => window.location.reload()} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'><RefreshCw size={15} /> Refresh</button>
       </div>
@@ -112,7 +138,7 @@ const AddProductNew = ({ token }) => {
           <Num n={1}>Basic Information</Num>
           <label className='flex flex-col items-center gap-1 cursor-pointer'>
             <span className='text-xs font-semibold text-fg inline-flex items-center gap-1'><Ruler size={13} /> Size chart</span>
-            <div className='w-16 h-14 rounded-lg border-2 border-dashed border-line grid place-items-center bg-surface-2 overflow-hidden'>{sizeChart ? <img src={URL.createObjectURL(sizeChart)} alt='' className='w-full h-full object-cover' /> : <UploadCloud size={16} className='text-faint' />}</div>
+            <div className='w-16 h-14 rounded-lg border-2 border-dashed border-line grid place-items-center bg-surface-2 overflow-hidden'>{sizeChart ? <img src={URL.createObjectURL(sizeChart)} alt='' className='w-full h-full object-cover' /> : existingSizeChart ? <img src={existingSizeChart} alt='' className='w-full h-full object-cover' /> : <UploadCloud size={16} className='text-faint' />}</div>
             <input type='file' accept='image/*' hidden onChange={(e) => setSizeChart(e.target.files?.[0] || null)} />
           </label>
         </div>
@@ -202,7 +228,7 @@ const AddProductNew = ({ token }) => {
                   <tr key={i} className='border-b border-line/70 last:border-0'>
                     <td className='py-2.5 px-3 text-muted'>{i + 1}</td>
                     <td className='py-2.5 px-3'><span className='inline-flex items-center gap-2'><span className='w-4 h-4 rounded-full border border-line' style={{ background: c.colorCode }} /> {c.color}</span></td>
-                    <td className='py-2.5 px-3'><div className='flex gap-1'>{c.images.slice(0, 3).map((f, k) => <img key={k} src={URL.createObjectURL(f)} alt='' className='w-7 h-7 rounded object-cover border border-line' />)}{c.images.length > 3 && <span className='text-xs text-muted'>+{c.images.length - 3}</span>}</div></td>
+                    <td className='py-2.5 px-3'><div className='flex gap-1'>{(c.imageUrls || []).slice(0, 3).map((u, k) => <img key={'u' + k} src={u} alt='' className='w-7 h-7 rounded object-cover border border-line' />)}{(c.images || []).slice(0, 3).map((f, k) => <img key={k} src={URL.createObjectURL(f)} alt='' className='w-7 h-7 rounded object-cover border border-line' />)}{((c.imageUrls || []).length + (c.images || []).length) > 3 && <span className='text-xs text-muted'>+{(c.imageUrls || []).length + (c.images || []).length - 3}</span>}</div></td>
                     <td className='py-2.5 px-3 text-muted'>{c.videos.length}</td>
                     <td className='py-2.5 px-3 text-fg'>{c.sizes.join(', ')}</td>
                     <td className='py-2.5 px-3 text-fg'>{c.mrp}</td>
@@ -221,7 +247,7 @@ const AddProductNew = ({ token }) => {
         <button onClick={() => navigate('/products')} className='px-5 py-2.5 text-sm font-semibold rounded-xl bg-white border border-line text-fg'>Cancel</button>
         <div className='flex items-center gap-2'>
           <button onClick={() => submit(true)} disabled={busy} className='inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-white border border-accent text-accent'><Save size={15} /> Save as Draft</button>
-          <button onClick={() => submit(false)} disabled={busy} className='inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'><Send size={15} /> {busy ? 'Submitting…' : 'Submit for Approval'}</button>
+          <button onClick={() => submit(false)} disabled={busy} className='inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white hover:bg-accent-dark'><Send size={15} /> {busy ? 'Saving…' : editId ? 'Update Product' : 'Submit for Approval'}</button>
         </div>
       </div>
     </div>
