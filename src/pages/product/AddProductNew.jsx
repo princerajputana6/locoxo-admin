@@ -112,7 +112,15 @@ const AddProductNew = ({ token }) => {
 
   const submit = async (asDraft = false) => {
     if (!basic.name.trim()) return toast.error('Product name is required')
-    const all = cur.color.trim() && cur.sizes.length && cur.mrp ? [...colours, { ...cur, sellingPrice: cur.sellingPrice || discountedPrice }] : colours
+    // Fold any colour still open in the form into the list. If it was loaded for
+    // EDIT (pencil), replace that row — otherwise a duplicate would be appended and
+    // colours[0] (which drives the product's price/image) would keep the old values.
+    const curFilled = cur.color.trim() && cur.sizes.length && cur.mrp
+    const curRow = { ...cur, sellingPrice: cur.sellingPrice || discountedPrice }
+    let all
+    if (curFilled && editingColourIdx !== null) all = colours.map((c, i) => i === editingColourIdx ? curRow : c)
+    else if (curFilled) all = [...colours, curRow]
+    else all = colours
     if (all.length === 0) return toast.error('Add at least one colour')
     setBusy(true)
     try {
