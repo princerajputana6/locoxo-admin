@@ -10,7 +10,7 @@ import { PageHeader, Btn, StatCard, FilterTabs, EmptyState, StatusPill, Modal, T
 
 const inp = 'w-full px-3 py-2 text-sm rounded-lg bg-surface-2 border border-line text-fg placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent/15 outline-none'
 const lbl = 'block text-[10px] font-semibold uppercase tracking-wider text-faint mb-1'
-const FILTERS = ['all', 'active', 'inactive', 'scheduled', 'coming_soon']
+const FILTERS = ['all', 'active', 'inactive']
 const STATUS_LABEL = { active: 'Active', inactive: 'Inactive', scheduled: 'Scheduled', coming_soon: 'Coming soon' }
 const PRESET_SECTIONS = ['Hero', 'Best Sellers', 'New Arrivals', 'Top Category', 'Featured', 'Trending', 'Match the Mood', 'Spotlight']
 
@@ -36,7 +36,7 @@ const Merchandising = ({ token }) => {
   const summary = useMemo(() => ({
     total: sections.length,
     active: sections.filter((s) => s.status === 'active').length,
-    scheduled: sections.filter((s) => s.status === 'scheduled').length,
+    inactive: sections.filter((s) => s.status === 'inactive').length,
     collections: sections.filter((s) => s.type === 'collection').length,
   }), [sections])
 
@@ -74,7 +74,7 @@ const Merchandising = ({ token }) => {
       <div className='grid grid-cols-2 md:grid-cols-4 gap-3 mb-6'>
         <StatCard icon={Layers} label='Sections' value={summary.total} />
         <StatCard icon={CheckCircle2} label='Active' value={summary.active} tone='brand' />
-        <StatCard icon={CalendarClock} label='Scheduled' value={summary.scheduled} tone='amber' />
+        <StatCard icon={EyeOff} label='Inactive' value={summary.inactive} tone='amber' />
         <StatCard icon={Sparkles} label='Collections' value={summary.collections} tone='accent' />
       </div>
 
@@ -147,7 +147,7 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
   }, [])
 
   // Category cards
-  const addCatCard = (c) => setCardCats((list) => list.some((x) => x.name === c.name) ? list : [...list, { name: c.name, image: c.image || '', url: `/collection?category=${encodeURIComponent(c.name)}` }])
+  const addCatCard = (c) => setCardCats((list) => list.some((x) => x.name === c.name) ? list : [...list, { name: c.name, image: c.image || '', imageMobile: '', url: `/collection?category=${encodeURIComponent(c.name)}`, showName: true, showButton: true, buttonText: 'Shop Now' }])
   const updCatCard = (i, f, v) => setCardCats((list) => list.map((x, idx) => idx === i ? { ...x, [f]: v } : x))
   const rmCatCard = (i) => setCardCats((list) => list.filter((_, idx) => idx !== i))
   // Combos
@@ -189,22 +189,23 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
     finally { setBusy(false) }
   }
 
-  const Pick = ({ label, file, existing, onPick, count }) => (
+  const Pick = ({ label, file, existing, onPick, count, hint }) => (
     <div>
       <span className={lbl}>{label}</span>
       <div className='flex items-center gap-2 flex-wrap'>
         {existing && !file && <img src={existing} alt='' className='w-12 h-12 rounded-lg object-cover border border-line' />}
-        {file && <span className='text-[11px] text-muted'>{count ? `${count} file(s)` : file.name?.slice(0, 16)}</span>}
+        {file && <span className='text-[11px] text-muted'>{count ? `${Array.isArray(file) ? file.length : 1} file(s)` : file.name?.slice(0, 16)}</span>}
         <label className='px-3 py-2 rounded-lg border border-dashed border-line hover:border-accent/60 bg-surface-2 cursor-pointer text-xs text-muted inline-flex items-center gap-1'>
           <ImagePlus size={13} />Upload
           <input type='file' accept={label.includes('Video') ? 'video/*' : 'image/*'} multiple={!!count} hidden onChange={(e) => onPick(count ? [...e.target.files] : e.target.files?.[0] || null)} />
         </label>
       </div>
+      {hint && <p className='text-[10px] text-muted mt-1'>{hint}</p>}
     </div>
   )
 
   return (
-    <Modal open onClose={onClose} icon={LayoutGrid} title={isEdit ? `Edit · ${initial.name}` : 'Add Section'} subtitle='Products · banners · schedule · link' size='xl'
+    <Modal open onClose={onClose} icon={LayoutGrid} title={isEdit ? `Edit · ${initial.name}` : 'Add Section'} subtitle='Products / categories · images · layout · link' size='xl'
       footer={<><Btn variant='ghost' size='sm' onClick={onClose}>Cancel</Btn><Btn variant='primary' size='sm' loading={busy} onClick={submit}>{isEdit ? 'Save changes' : 'Create section'}</Btn></>}
     >
       <form onSubmit={submit} className='space-y-4'>
@@ -217,24 +218,18 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
           <div><label className={lbl}>Type</label><select value={type} onChange={(e) => setType(e.target.value)} className={inp}><option value='homepage_section'>Homepage section</option><option value='collection'>Collection</option></select></div>
           {type === 'collection' && <div><label className={lbl}>Collection tag</label><input value={collectionTag} onChange={(e) => setCollectionTag(e.target.value)} className={inp} placeholder='Summer / Winter / Festive' /></div>}
           <div><label className={lbl}>Link (category / CTA)</label><input value={link} onChange={(e) => setLink(e.target.value)} className={inp} placeholder='/collection?category=Men' /></div>
-          <div><label className={lbl}>Status</label><select value={status} onChange={(e) => setStatus(e.target.value)} className={inp}><option value='active'>Active</option><option value='inactive'>Inactive</option><option value='scheduled'>Scheduled</option><option value='coming_soon'>Coming soon</option></select></div>
-          {status === 'scheduled' && <>
-            <div><label className={lbl}>Start date</label><input type='date' value={scheduleStart} onChange={(e) => setScheduleStart(e.target.value)} className={inp} /></div>
-            <div><label className={lbl}>End date</label><input type='date' value={scheduleEnd} onChange={(e) => setScheduleEnd(e.target.value)} className={inp} /></div>
-          </>}
+          <div><label className={lbl}>Status</label><select value={status} onChange={(e) => setStatus(e.target.value)} className={inp}><option value='active'>Active</option><option value='inactive'>Inactive</option></select></div>
         </div>
 
-        <div className='grid sm:grid-cols-4 gap-3'>
-          <Pick label='Banners (1–2)' file={banners.length ? banners : null} count={banners.length || 2} onPick={setBanners} />
-          <Pick label='Mobile banner' file={mobile} existing={initial?.bannerMobile} onPick={setMobile} />
-          <Pick label='Thumbnail' file={thumb} existing={initial?.thumbnail} onPick={setThumb} />
-          <Pick label='Video' file={video} onPick={setVideo} />
+        <div className='grid sm:grid-cols-2 gap-3'>
+          <Pick label='Desktop image' file={banners.length ? banners : null} existing={initial?.bannerImages?.[0]} count={banners.length || 1} onPick={setBanners} hint='Recommended 1920 × 800 px (landscape)' />
+          <Pick label='Mobile image' file={mobile} existing={initial?.bannerMobile} onPick={setMobile} hint='Recommended 800 × 1000 px (portrait)' />
         </div>
 
         {/* Content type + layout + card placement */}
         <div className='rounded-xl border border-line p-3 bg-surface-2/40'>
           <div className='grid sm:grid-cols-4 gap-3'>
-            <div><label className={lbl}>Section shows</label><select value={contentType} onChange={(e) => setContentType(e.target.value)} className={inp}><option value='products'>Products</option><option value='categories'>Categories</option><option value='combo'>Combos</option></select></div>
+            <div><label className={lbl}>Section shows</label><select value={contentType} onChange={(e) => setContentType(e.target.value)} className={inp}><option value='products'>Products</option><option value='categories'>Categories</option></select></div>
             <div><label className={lbl}>Layout</label><select value={layout} onChange={(e) => setLayout(e.target.value)} className={inp}><option value='grid'>Grid</option><option value='slider'>Slider</option><option value='hero'>Hero (full-screen)</option></select></div>
             {layout === 'hero' && <div><label className={lbl}>Categories per hero slide</label><input value={heroSlides} onChange={(e) => setHeroSlides(e.target.value)} className={inp} placeholder='3, 1, 2' /><p className='text-[10px] text-muted mt-1'>e.g. 3, 1, 2 → slide 1 shows 3, slide 2 shows 1, slide 3 shows 2. Use content type “Categories”.</p></div>}
             <div><label className={lbl}>Cards / row</label>
@@ -258,46 +253,31 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
             </div>
             <div className='space-y-2'>
               {cardCats.map((cc, i) => (
-                <div key={i} className='flex items-center gap-2 rounded-lg border border-line p-2'>
-                  <img src={cc.image || 'https://placehold.co/40'} alt='' className='w-9 h-9 rounded object-cover border border-line' />
-                  <span className='font-semibold text-fg text-sm w-28 truncate'>{cc.name}</span>
-                  <input value={cc.image} onChange={(e) => updCatCard(i, 'image', e.target.value)} placeholder='Image URL' className='flex-1 px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
-                  <input value={cc.url} onChange={(e) => updCatCard(i, 'url', e.target.value)} placeholder='Link URL' className='flex-1 px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
-                  <button type='button' onClick={() => rmCatCard(i)} className='text-danger px-2'>✕</button>
+                <div key={i} className='rounded-lg border border-line p-2.5 space-y-2'>
+                  <div className='flex items-center gap-2'>
+                    <img src={cc.image || 'https://placehold.co/40'} alt='' className='w-9 h-9 rounded object-cover border border-line' />
+                    <span className='font-semibold text-fg text-sm w-28 truncate'>{cc.name}</span>
+                    <input value={cc.url} onChange={(e) => updCatCard(i, 'url', e.target.value)} placeholder='Link URL (where the card points)' className='flex-1 px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
+                    <button type='button' onClick={() => rmCatCard(i)} className='text-danger px-2'>✕</button>
+                  </div>
+                  <div className='grid sm:grid-cols-2 gap-2'>
+                    <input value={cc.image} onChange={(e) => updCatCard(i, 'image', e.target.value)} placeholder='Desktop image URL (1920×800)' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
+                    <input value={cc.imageMobile || ''} onChange={(e) => updCatCard(i, 'imageMobile', e.target.value)} placeholder='Mobile image URL (800×1000, optional)' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
+                  </div>
+                  <div className='flex flex-wrap items-center gap-4'>
+                    <label className='flex items-center gap-1.5 text-xs text-fg cursor-pointer'>
+                      <input type='checkbox' checked={cc.showName !== false} onChange={(e) => updCatCard(i, 'showName', e.target.checked)} className='accent-accent' /> Show category name
+                    </label>
+                    <label className='flex items-center gap-1.5 text-xs text-fg cursor-pointer'>
+                      <input type='checkbox' checked={cc.showButton !== false} onChange={(e) => updCatCard(i, 'showButton', e.target.checked)} className='accent-accent' /> Show button
+                    </label>
+                    {cc.showButton !== false && (
+                      <input value={cc.buttonText ?? 'Shop Now'} onChange={(e) => updCatCard(i, 'buttonText', e.target.value)} placeholder='Button text' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line w-32' />
+                    )}
+                  </div>
                 </div>
               ))}
               {cardCats.length === 0 && <p className='text-xs text-muted'>Click a category above to add it as a card.</p>}
-            </div>
-          </div>
-        )}
-
-        {/* Combo builder */}
-        {contentType === 'combo' && (
-          <div>
-            <span className={lbl}>Combos ({combos.length})</span>
-            {combos.map((c, i) => (
-              <div key={i} className='flex items-center gap-2 rounded-lg border border-line p-2 mb-1.5'>
-                <span className='font-semibold text-fg text-sm flex-1'>{c.name} <span className='text-muted font-normal'>· {c.products.length} items{c.price ? ` · ${currency}${c.price}` : ''}</span></span>
-                <span className='text-[11px] text-muted truncate max-w-[40%]'>{c.products.map(pName).join(', ')}</span>
-                <button type='button' onClick={() => rmCombo(i)} className='text-danger px-2'>✕</button>
-              </div>
-            ))}
-            <div className='rounded-lg border border-dashed border-line p-3 space-y-2'>
-              <div className='grid sm:grid-cols-4 gap-2'>
-                <input value={combo.name} onChange={(e) => setCombo({ ...combo, name: e.target.value })} placeholder='Combo name' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
-                <input value={combo.image} onChange={(e) => setCombo({ ...combo, image: e.target.value })} placeholder='Image URL (optional)' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
-                <input type='number' value={combo.price} onChange={(e) => setCombo({ ...combo, price: e.target.value })} placeholder='Combo price' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
-                <input type='number' value={combo.mrp} onChange={(e) => setCombo({ ...combo, mrp: e.target.value })} placeholder='MRP (optional)' className='px-2 py-1.5 text-xs rounded-lg bg-surface-2 border border-line' />
-              </div>
-              <div className='grid sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto'>
-                {products.slice(0, 60).map((p) => (
-                  <label key={p._id} className={`flex items-center gap-2 px-2 py-1 rounded-lg border cursor-pointer text-xs ${combo.products.includes(p._id) ? 'border-accent/50 bg-accent/10' : 'border-line bg-surface-2'}`}>
-                    <input type='checkbox' checked={combo.products.includes(p._id)} onChange={() => comboToggle(p._id)} className='accent-accent' />
-                    <span className='truncate'>{p.name}</span>
-                  </label>
-                ))}
-              </div>
-              <button type='button' onClick={addCombo} className='px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent text-white'>+ Add combo</button>
             </div>
           </div>
         )}
