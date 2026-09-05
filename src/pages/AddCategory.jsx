@@ -58,6 +58,7 @@ const AddCategory = ({ token }) => {
 
   const submit = async (asDraft = false) => {
     if (!main.name.trim()) return toast.error('Category name is required')
+    if (!image && !existingImage) return toast.error('Category image is required')
     setBusy(true)
     try {
       const fd = new FormData()

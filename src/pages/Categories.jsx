@@ -229,6 +229,7 @@ const AddSubModal = ({ token, info, onClose, onSaved }) => {
 
   const save = async () => {
     if (!name.trim()) return toast.error('Name is required')
+    if (!image && !editing?.image) return toast.error('Category image is required')
     setBusy(true)
     try {
       const fd = new FormData()
@@ -268,10 +269,10 @@ const AddSubModal = ({ token, info, onClose, onSaved }) => {
             <div><label className='block text-sm font-semibold text-fg mb-1.5'>Status</label><select value={status} onChange={(e) => setStatus(e.target.value)} className={inp}><option value='active'>Enabled</option><option value='inactive'>Disabled</option></select></div>
           </div>
           <div>
-            <label className='block text-sm font-semibold text-fg mb-1.5'>Image (optional)</label>
+            <label className='block text-sm font-semibold text-fg mb-1.5'>Image <span className='text-danger'>*</span></label>
             <label className='flex items-center gap-3 h-16 px-3 rounded-xl border-2 border-dashed border-line bg-surface-2 cursor-pointer hover:border-accent/50 overflow-hidden'>
-              {image ? <img src={URL.createObjectURL(image)} alt='' className='h-12 w-12 rounded object-cover' /> : <ImageLucide size={20} className='text-faint' />}
-              <span className='text-sm text-muted'>{image ? image.name : 'Upload image'}</span>
+              {image ? <img src={URL.createObjectURL(image)} alt='' className='h-12 w-12 rounded object-cover' /> : editing?.image ? <img src={editing.image} alt='' className='h-12 w-12 rounded object-cover' /> : <ImageLucide size={20} className='text-faint' />}
+              <span className='text-sm text-muted'>{image ? image.name : editing?.image ? 'Change image' : 'Upload image'}</span>
               <input type='file' accept='image/*' hidden onChange={(e) => setImage(e.target.files?.[0] || null)} />
             </label>
           </div>
