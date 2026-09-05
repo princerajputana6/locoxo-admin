@@ -6,7 +6,7 @@ import { toast } from 'react-toastify'
 import { exportToCsv } from '../../utils/exportCsv'
 import {
   Shirt, CheckCircle2, PackageX, AlertTriangle, Clock, FileText,
-  Plus, FileSpreadsheet, RefreshCw, Search, Copy, Pencil, Check, Ban,
+  Plus, FileSpreadsheet, RefreshCw, Search, Copy, Pencil, Check, Ban, Trash2,
 } from 'lucide-react'
 
 const STATUS_OPTS = [
@@ -69,6 +69,14 @@ const ProductManagement = ({ token }) => {
 
   const changeStatus = async (id, status) => {
     try { const { data } = await axios.put(`${backendUrl}/api/product/status/${id}`, { status }, { headers: { token } }); if (data.success) { toast.success(data.message); load() } } catch { toast.error('Failed') }
+  }
+
+  const removeProduct = async (id, name) => {
+    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/product/remove`, { id }, { headers: { token } })
+      if (data.success) { toast.success('Product deleted'); load() } else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed to delete') }
   }
   const slug = (n) => '/product/' + String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
   const sel = 'px-3 py-2 text-sm rounded-lg bg-white border border-line text-fg focus:border-accent outline-none'
@@ -138,6 +146,7 @@ const ProductManagement = ({ token }) => {
                           : <button onClick={() => changeStatus(r._id, 'active')} title='Approve & publish to store' className='inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-success text-white hover:bg-success/90 text-xs font-semibold'><Check size={13} /> Approve</button>}
                         <button onClick={() => { navigator.clipboard?.writeText(window.location.origin + slug(r.name)); toast.success('Link copied') }} title='Copy link' className='grid place-items-center w-8 h-8 rounded-lg border border-line text-muted hover:text-accent'><Copy size={14} /></button>
                         <button onClick={() => navigate('/products/add?edit=' + r._id)} title='Edit' className='grid place-items-center w-8 h-8 rounded-lg border border-line text-accent'><Pencil size={14} /></button>
+                        <button onClick={() => removeProduct(r._id, r.name)} title='Delete' className='grid place-items-center w-8 h-8 rounded-lg border border-line text-danger hover:bg-danger/5'><Trash2 size={14} /></button>
                       </div></td>
                     </tr>
                   ))}
