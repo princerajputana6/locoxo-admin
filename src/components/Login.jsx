@@ -26,7 +26,28 @@ const Login = ({setToken, setUserRole, setUserData}) => {
                     return
                 }
             } catch (adminError) {
-                // Admin login failed, try influencer login
+                // Admin login failed, try staff then influencer.
+            }
+
+            // Try staff / sub-admin login
+            try {
+                const staffRes = await axios.post(backendUrl + '/api/admin-mgmt/staff-login', { email, password })
+                if (staffRes.data.success) {
+                    const s = staffRes.data.staff
+                    setToken(staffRes.data.token)
+                    setUserRole('staff')
+                    setUserData(s)
+                    localStorage.setItem('userRole', 'staff')
+                    localStorage.setItem('userData', JSON.stringify(s))
+                    toast.success(`Welcome ${s.name}!`)
+                    return
+                } else if (staffRes.data.message && !/no staff account/i.test(staffRes.data.message)) {
+                    // A real staff error (inactive / wrong password) — surface it, don't fall through.
+                    toast.error(staffRes.data.message)
+                    return
+                }
+            } catch (staffError) {
+                // fall through to influencer
             }
 
             // Try influencer login

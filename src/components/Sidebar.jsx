@@ -6,6 +6,7 @@ import {
   BarChart3, TrendingUp, LifeBuoy, ChevronLeft, ChevronDown, Calculator, LayoutGrid, Star, ShieldCheck, Shield,
 } from 'lucide-react'
 import { assets } from '../assets/assets'
+import { canAccess } from '../config/permissions'
 
 const groups = [
   {
@@ -16,17 +17,17 @@ const groups = [
     label: 'Management',
     items: [
       {
-        to: '/products', label: 'Products', icon: Package, children: [
+        to: '/products', label: 'Products', icon: Package, perm: 'products', children: [
           { to: '/products', label: 'Overview', end: true },
           { to: '/products/details', label: 'Product Details' },
           { to: '/products/add', label: 'Add Product' },
           { to: '/categories', label: 'Categories' },
         ],
       },
-      { to: '/categories', label: 'Categories', icon: Tag },
-      { to: '/merchandising', label: 'Merchandising', icon: LayoutGrid },
+      { to: '/categories', label: 'Categories', icon: Tag, perm: 'categories' },
+      { to: '/merchandising', label: 'Merchandising', icon: LayoutGrid, perm: 'merchandising' },
       {
-        to: '/orders', label: 'Orders', icon: ShoppingCart, children: [
+        to: '/orders', label: 'Orders', icon: ShoppingCart, perm: 'orders', children: [
           { to: '/orders', label: 'All Orders', end: true },
           { to: '/orders?tab=Pending', label: 'Pending Orders' },
           { to: '/orders?tab=Confirmed', label: 'Confirmed Orders' },
@@ -38,9 +39,9 @@ const groups = [
           { to: '/orders?tab=Exchange', label: 'Exchange Orders' },
         ],
       },
-      { to: '/customers', label: 'Customers', icon: Users },
+      { to: '/customers', label: 'Customers', icon: Users, perm: 'customers' },
       {
-        to: '/inventory', label: 'Inventory', icon: Boxes, accent: true, children: [
+        to: '/inventory', label: 'Inventory', icon: Boxes, accent: true, perm: 'inventory', children: [
           { to: '/inventory', label: 'Overview', end: true },
           { to: '/inventory/product-code', label: 'Create Product Code' },
           { to: '/inventory/bulk-add', label: 'Bulk Add' },
@@ -48,43 +49,44 @@ const groups = [
           { to: '/inventory/stock-details', label: 'Stock Details' },
         ],
       },
-      { to: '/calculator', label: 'Calculator', icon: Calculator },
+      { to: '/calculator', label: 'Calculator', icon: Calculator, perm: 'calculator' },
       {
-        to: '/coupons', label: 'Coupons / Promos', icon: TicketPercent, children: [
+        to: '/coupons', label: 'Coupons / Promos', icon: TicketPercent, perm: 'coupons', children: [
           { to: '/coupons', label: 'All Coupons', end: true },
           { to: '/coupons', label: 'Add Coupon' },
           { to: '/coupons', label: 'Promo Codes' },
           { to: '/coupons', label: 'Influencer Promo Codes' },
         ],
       },
-      { to: '/banners', label: 'Banners', icon: Image },
+      { to: '/banners', label: 'Banners', icon: Image, perm: 'banners' },
       {
-        to: '/returns', label: 'Returns & Refunds', icon: RotateCcw, children: [
+        to: '/returns', label: 'Returns & Refunds', icon: RotateCcw, perm: 'returns', children: [
           { to: '/returns', label: 'All Requests', end: true },
           { to: '/returns?type=return', label: 'Returns' },
           { to: '/returns?type=exchange', label: 'Exchanges' },
           { to: '/returns?type=refund', label: 'Refunds' },
         ],
       },
-      { to: '/influencers', label: 'Influencers', icon: TrendingUp },
-      { to: '/reviews', label: 'Reviews', icon: Star },
-      { to: '/tickets', label: 'Tickets', icon: LifeBuoy },
+      { to: '/influencers', label: 'Influencers', icon: TrendingUp, perm: 'influencers' },
+      { to: '/reviews', label: 'Reviews', icon: Star, perm: 'reviews' },
+      { to: '/tickets', label: 'Tickets', icon: LifeBuoy, perm: 'tickets' },
     ],
   },
   {
     label: 'Growth',
     items: [
-      { to: '/marketing', label: 'Marketing', icon: Megaphone },
-      { to: '/membership', label: 'Membership', icon: Crown },
-      { to: '/ai-insights', label: 'AI Insights', icon: Sparkles },
-      { to: '/admin-management', label: 'Admin Management', icon: ShieldCheck },
+      { to: '/marketing', label: 'Marketing', icon: Megaphone, perm: 'marketing' },
+      { to: '/membership', label: 'Membership', icon: Crown, perm: 'membership' },
+      { to: '/ai-insights', label: 'AI Insights', icon: Sparkles, perm: 'ai-insights' },
+      // Admin Management is super-admin only (perm key not grantable to staff).
+      { to: '/admin-management', label: 'Admin Management', icon: ShieldCheck, perm: 'admin-management' },
     ],
   },
   {
     label: 'Reports',
     items: [
-      { to: '/reports/sales', label: 'Sales', icon: BarChart3 },
-      { to: '/reports/analytics', label: 'Analytics', icon: TrendingUp },
+      { to: '/reports/sales', label: 'Sales', icon: BarChart3, perm: 'reports' },
+      { to: '/reports/analytics', label: 'Analytics', icon: TrendingUp, perm: 'reports' },
     ],
   },
 ]
@@ -114,11 +116,14 @@ const Sidebar = () => {
       </div>
 
       <nav className='flex-1 overflow-y-auto py-4 px-2.5 space-y-1'>
-        {groups.map((g, gi) => (
+        {groups.map((g, gi) => {
+          const items = g.items.filter((it) => canAccess(it.perm))
+          if (items.length === 0) return null
+          return (
           <div key={gi} className={gi > 0 ? 'pt-4' : ''}>
             {g.label && !collapsed && <p className='px-3 mb-1.5 text-[10px] font-bold text-white/50 uppercase tracking-widest'>{g.label}</p>}
             <div className='space-y-1'>
-              {g.items.map((it) => {
+              {items.map((it) => {
                 const expanded = open[it.to] ?? isSectionActive(it)
                 if (it.children && !collapsed) {
                   return (
@@ -157,7 +162,8 @@ const Sidebar = () => {
               })}
             </div>
           </div>
-        ))}
+          )
+        })}
       </nav>
 
       {!collapsed && (

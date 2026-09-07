@@ -1,7 +1,28 @@
 import React, { useEffect, useState } from 'react'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { canAccess } from './config/permissions'
+
+// Blocks a limited staff from opening (by URL) a section they weren't granted.
+const pathPerm = (p) => {
+  const map = [
+    ['/products', 'products'], ['/categories', 'categories'], ['/merchandising', 'merchandising'],
+    ['/orders', 'orders'], ['/customers', 'customers'], ['/inventory', 'inventory'],
+    ['/calculator', 'calculator'], ['/coupons', 'coupons'], ['/banners', 'banners'],
+    ['/returns', 'returns'], ['/influencers', 'influencers'], ['/reviews', 'reviews'],
+    ['/tickets', 'tickets'], ['/marketing', 'marketing'], ['/membership', 'membership'],
+    ['/ai-insights', 'ai-insights'], ['/admin-management', 'admin-management'], ['/reports', 'reports'],
+  ]
+  const hit = map.find(([prefix]) => p === prefix || p.startsWith(prefix + '/'))
+  return hit ? hit[1] : null   // null = unguarded (Dashboard etc.)
+}
+
+const PermGuard = ({ children }) => {
+  const { pathname } = useLocation()
+  if (!canAccess(pathPerm(pathname))) return <Navigate to='/' replace />
+  return children
+}
 import Add from './pages/Add'
 import List from './pages/List'
 import ProductManagement from './pages/product/ProductManagement'
@@ -81,10 +102,11 @@ const App = () => {
         ? <Login setToken={setToken} setUserRole={setUserRole} setUserData={setUserData} />
         : (
           <div className='flex w-full'>
-            {userRole === 'admin' && <Sidebar />}
+            {(userRole === 'admin' || userRole === 'staff') && <Sidebar />}
             <div className='flex-1 bg-ink min-h-screen flex flex-col'>
               <Navbar setToken={handleLogout} userRole={userRole} userData={userData} />
-              {userRole === 'admin' ? (
+              {(userRole === 'admin' || userRole === 'staff') ? (
+                <PermGuard>
                 <Routes>
                   <Route path='/' element={<Dashboard token={token} />} />
                   <Route path='/add' element={<Add token={token} />} />
@@ -120,6 +142,7 @@ const App = () => {
                   <Route path='/reports/analytics' element={<Analytics token={token} />} />
                   <Route path='*' element={<Navigate to='/' />} />
                 </Routes>
+                </PermGuard>
               ) : (
                 <Routes>
                   <Route path='/' element={<InfluencerDashboard token={token} userData={userData} />} />

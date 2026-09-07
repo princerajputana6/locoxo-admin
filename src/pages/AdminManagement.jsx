@@ -6,6 +6,7 @@ import {
   Shield, User, Users, UserCog, Plus, Lock, KeyRound, Smartphone, ShieldCheck,
   Search, Filter, Pencil, Trash2, X, ArrowRight,
 } from 'lucide-react'
+import { PERMISSION_MODULES } from '../config/permissions'
 
 const StatCard = ({ icon: Icon, label, value, sub, tone }) => {
   const tones = { blue: 'bg-accent/10 text-accent', green: 'bg-success/10 text-success', violet: 'bg-violet/10 text-violet', amber: 'bg-amber/10 text-amber' }
@@ -20,7 +21,7 @@ const AdminManagement = ({ token }) => {
   const [q, setQ] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [editId, setEditId] = useState(null)
-  const [form, setForm] = useState({ name: '', email: '', mobile: '', password: '', role: 'staff', accessType: 'limited', status: 'active' })
+  const [form, setForm] = useState({ name: '', email: '', mobile: '', password: '', role: 'staff', accessType: 'limited', status: 'active', permissions: [] })
 
   const load = async () => {
     try { const { data } = await axios.get(backendUrl + '/api/admin-mgmt/overview', { headers: { token } }); if (data.success) { setD(data); setPerms(data.settings.staffPermissions || []) } else toast.error(data.message) }
@@ -33,7 +34,7 @@ const AdminManagement = ({ token }) => {
   const savePerms = async () => { try { await axios.put(`${backendUrl}/api/admin-mgmt/permissions`, { permissions: perms }, { headers: { token } }); toast.success('Permissions saved') } catch { toast.error('Failed') } }
   const addUser = async () => {
     if (!form.name || !form.email) return toast.error('Name and email required')
-    try { const { data } = editId ? await axios.put(`${backendUrl}/api/admin-mgmt/staff/${editId}`, form, { headers: { token } }) : await axios.post(`${backendUrl}/api/admin-mgmt/staff`, form, { headers: { token } }); if (data.success) { toast.success(editId ? 'User updated' : 'User added'); setShowAdd(false); setEditId(null); setForm({ name: '', email: '', mobile: '', password: '', role: 'staff', accessType: 'limited', status: 'active' }); load() } else toast.error(data.message) } catch (e) { toast.error('Failed') }
+    try { const { data } = editId ? await axios.put(`${backendUrl}/api/admin-mgmt/staff/${editId}`, form, { headers: { token } }) : await axios.post(`${backendUrl}/api/admin-mgmt/staff`, form, { headers: { token } }); if (data.success) { toast.success(editId ? 'User updated' : 'User added'); setShowAdd(false); setEditId(null); setForm({ name: '', email: '', mobile: '', password: '', role: 'staff', accessType: 'limited', status: 'active', permissions: [] }); load() } else toast.error(data.message) } catch (e) { toast.error('Failed') }
   }
   const delUser = async (id) => { if (!id || !window.confirm('Delete this user?')) return; try { await axios.delete(`${backendUrl}/api/admin-mgmt/staff/${id}`, { headers: { token } }); load() } catch { toast.error('Failed') } }
 
@@ -45,7 +46,7 @@ const AdminManagement = ({ token }) => {
     <div className='p-6'>
       <div className='flex items-start justify-between mb-5'>
         <div><h1 className='text-2xl font-heading font-extrabold text-fg'>Admin Management</h1><p className='text-sm text-muted'>Manage admins, staff, permissions and security</p></div>
-        <button onClick={() => { setEditId(null); setForm({ name: '', email: '', mobile: '', password: '', role: 'staff', accessType: 'limited', status: 'active' }); setShowAdd(true) }} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'><Plus size={15} /> Add User</button>
+        <button onClick={() => { setEditId(null); setForm({ name: '', email: '', mobile: '', password: '', role: 'staff', accessType: 'limited', status: 'active', permissions: [] }); setShowAdd(true) }} className='inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-accent text-white'><Plus size={15} /> Add User</button>
       </div>
 
       <div className='flex items-center gap-6 border-b border-line mb-4'>{['Admin', 'Staff', 'Influencer'].map((t) => <button key={t} onClick={() => setTab(t)} className={`pb-3 -mb-px text-sm font-semibold border-b-2 ${tab === t ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'}`}>{t}</button>)}</div>
@@ -119,7 +120,7 @@ const AdminManagement = ({ token }) => {
                   <td className='py-3 px-2 text-muted'>{u.accessType}</td>
                   <td className='py-3 px-2 text-muted text-xs'>{fmt(u.lastLogin)}</td>
                   <td className='py-3 px-2'><span className={`px-2 py-1 rounded-md text-[11px] font-semibold ${u.status === 'active' ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted'}`}>{u.status === 'active' ? 'Active' : 'Inactive'}</span></td>
-                  <td className='py-3 px-2'><div className='flex gap-1'><button onClick={() => { setEditId(u._id); setForm({ name: u.name || '', email: u.email || '', mobile: u.mobile || '', password: '', role: u.role || 'staff', accessType: u.accessType || 'limited', status: u.status || 'active' }); setShowAdd(true) }} className='inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-accent'><Pencil size={13} /> Edit</button>{u._id && <button onClick={() => delUser(u._id)} className='inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-danger'><Trash2 size={13} /> Delete</button>}</div></td>
+                  <td className='py-3 px-2'><div className='flex gap-1'><button onClick={() => { setEditId(u._id); setForm({ name: u.name || '', email: u.email || '', mobile: u.mobile || '', password: '', role: u.roleRaw || (u.role === 'Admin' ? 'admin' : 'staff'), accessType: u.accessTypeRaw || 'limited', status: u.status || 'active', permissions: u.permissions || [] }); setShowAdd(true) }} className='inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-accent'><Pencil size={13} /> Edit</button>{u._id && <button onClick={() => delUser(u._id)} className='inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-danger'><Trash2 size={13} /> Delete</button>}</div></td>
                 </tr>
               ))}
             </tbody>
@@ -142,6 +143,31 @@ const AdminManagement = ({ token }) => {
                 <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className='px-3 py-2 text-sm rounded-lg bg-white border border-line'><option value='staff'>Staff</option><option value='admin'>Admin</option></select>
                 <select value={form.accessType} onChange={(e) => setForm({ ...form, accessType: e.target.value })} className='px-3 py-2 text-sm rounded-lg bg-white border border-line'><option value='limited'>Limited Access</option><option value='all'>All Access</option></select>
               </div>
+
+              {/* Per-staff module permissions — only when access is limited. */}
+              {form.accessType === 'limited' && (
+                <div className='rounded-lg border border-line p-3'>
+                  <div className='flex items-center justify-between mb-2'>
+                    <p className='text-xs font-semibold text-fg'>Allowed sections</p>
+                    <div className='flex gap-2'>
+                      <button type='button' onClick={() => setForm({ ...form, permissions: PERMISSION_MODULES.map((m) => m.key) })} className='text-[11px] text-accent font-semibold'>Select all</button>
+                      <button type='button' onClick={() => setForm({ ...form, permissions: [] })} className='text-[11px] text-muted font-semibold'>Clear</button>
+                    </div>
+                  </div>
+                  <div className='grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto'>
+                    {PERMISSION_MODULES.map((m) => {
+                      const on = form.permissions.includes(m.key)
+                      return (
+                        <label key={m.key} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border cursor-pointer text-xs ${on ? 'border-accent/50 bg-accent/10 text-fg' : 'border-line bg-white text-muted'}`}>
+                          <input type='checkbox' checked={on} onChange={() => setForm({ ...form, permissions: on ? form.permissions.filter((k) => k !== m.key) : [...form.permissions, m.key] })} className='accent-accent' />
+                          <span className='truncate'>{m.label}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                  <p className='text-[10px] text-muted mt-2'>The staff will only see and access the sections you tick here.</p>
+                </div>
+              )}
             </div>
             <div className='flex gap-2 mt-4'><button onClick={() => setShowAdd(false)} className='flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-line'>Cancel</button><button onClick={addUser} className='flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-accent text-white'>{editId ? 'Update User' : 'Save User'}</button></div>
           </div>
