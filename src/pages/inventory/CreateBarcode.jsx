@@ -32,7 +32,8 @@ const CreateBarcode = ({ token }) => {
       const blob = await res.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href)
     } catch { toast.error('Download failed') }
   }
-  const downloadItem = (it) => dl(`${backendUrl}/api/inventory/items/label-pdf/${it._id}`, `${it.productCode}-${it.size}-${it.color}.pdf`)
+  // Tag → one barcode PER UNIT of this size/colour (repeats by its stock), each unique.
+  const downloadItem = (it) => dl(`${backendUrl}/api/inventory/items/barcodes/pdf?ids=${encodeURIComponent(it._id)}`, `${it.productCode}-${it.size}-${it.color}.pdf`)
   const downloadCode = (code) => dl(`${backendUrl}/api/inventory/items/barcodes/pdf?code=${encodeURIComponent(code)}`, `barcodes-${code}.pdf`)
 
   const allRows = useMemo(() => groups.flatMap((g) => g.items), [groups])
