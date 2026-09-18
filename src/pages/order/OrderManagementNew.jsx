@@ -202,12 +202,13 @@ const OrderCard = ({ o, act, changeStatus, printInvoice, token, refresh, ship, s
   const addNote = () => { if (note.trim()) act('/api/order/note', { orderId: o._id, note }, 'Note added').then(() => setNote('')) }
 
   return (
-    <div className='glass rounded-2xl p-5'>
-      <div className='grid grid-cols-1 lg:grid-cols-[1.3fr_1fr_1.4fr_auto] gap-6'>
-        <ItemBlock o={o} />
-        <CustomerBlock o={o} />
-        <StatusPanel o={o} act={act} changeStatus={changeStatus} token={token} />
-        <div className='min-w-[190px]'>
+    <div className='bg-surface rounded-2xl border border-line shadow-card p-5'>
+      <div className='grid grid-cols-1 lg:grid-cols-[1.3fr_1fr_1.25fr_0.7fr_auto] gap-6 lg:gap-0'>
+        <div className='lg:pr-6'><ItemBlock o={o} /></div>
+        <div className='lg:px-6 lg:border-l lg:border-line'><CustomerBlock o={o} /></div>
+        <div className='lg:px-6 lg:border-l lg:border-line'><StatusPanel o={o} act={act} changeStatus={changeStatus} token={token} /></div>
+        <div className='lg:px-6 lg:border-l lg:border-line'><Money o={o} /></div>
+        <div className='lg:pl-6 lg:border-l lg:border-line min-w-[190px]'>
           <p className='text-[11px] font-semibold text-muted uppercase tracking-wider mb-2'>Actions</p>
           <div className='space-y-2'>
             <button className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><Eye size={15} /> View Details</button>
