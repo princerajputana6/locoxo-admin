@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { backendUrl, currency } from '../../App'
 import { toast } from 'react-toastify'
@@ -198,6 +198,7 @@ const CustomerBlock = ({ o }) => (
 )
 
 const OrderCard = ({ o, act, changeStatus, printInvoice, token, refresh, ship, shipping }) => {
+  const navigate = useNavigate()
   const [note, setNote] = useState('')
   const addNote = () => { if (note.trim()) act('/api/order/note', { orderId: o._id, note }, 'Note added').then(() => setNote('')) }
 
@@ -211,7 +212,7 @@ const OrderCard = ({ o, act, changeStatus, printInvoice, token, refresh, ship, s
         <div className='lg:pl-6 lg:border-l lg:border-line min-w-[190px]'>
           <p className='text-[11px] font-semibold text-muted uppercase tracking-wider mb-2'>Actions</p>
           <div className='space-y-2'>
-            <button className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><Eye size={15} /> View Details</button>
+            <button onClick={() => navigate(`/orders/${o._id}`)} className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><Eye size={15} /> View Details</button>
             {!['Cancelled', 'Delivered', 'Completed', 'Returned'].includes(o.status) && <button onClick={() => changeStatus(o._id, 'Cancelled')} className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg border border-danger/40 text-danger hover:bg-danger/5'><X size={15} /> Cancel Order</button>}
             {o.status === 'Pending' && <button onClick={() => changeStatus(o._id, 'Confirmed')} className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg border border-success/40 text-success hover:bg-success/5'><Check size={15} /> Confirm Order</button>}
             {o.status === 'Confirmed' && <button onClick={() => changeStatus(o._id, 'Packed')} className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg border border-success/40 text-success hover:bg-success/5'><Check size={15} /> Confirm Order</button>}

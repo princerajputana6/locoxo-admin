@@ -30,6 +30,7 @@ import ProductDetailList from './pages/product/ProductDetailList'
 import AddProductNew from './pages/product/AddProductNew'
 import Orders from './pages/Orders'
 import OrderManagementNew from './pages/order/OrderManagementNew'
+import OrderDetails from './pages/order/OrderDetails'
 import Dashboard from './pages/Dashboard'
 import Categories from './pages/Categories'
 import AddCategory from './pages/AddCategory'
@@ -117,6 +118,7 @@ const App = () => {
                   <Route path='/products/legacy' element={<List token={token} />} />
                   <Route path='/orders' element={<OrderManagementNew token={token} />} />
                   <Route path='/orders/legacy' element={<Orders token={token} />} />
+                  <Route path='/orders/:orderId' element={<OrderDetails token={token} />} />
                   <Route path='/categories' element={<Categories token={token} />} />
                   <Route path='/categories/add' element={<AddCategory token={token} />} />
                   <Route path='/merchandising' element={<Merchandising token={token} />} />
