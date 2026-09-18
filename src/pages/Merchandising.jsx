@@ -189,21 +189,6 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
     finally { setBusy(false) }
   }
 
-  const Pick = ({ label, file, existing, onPick, count, hint }) => (
-    <div>
-      <span className={lbl}>{label}</span>
-      <div className='flex items-center gap-2 flex-wrap'>
-        {existing && !file && <img src={existing} alt='' className='w-12 h-12 rounded-lg object-cover border border-line' />}
-        {file && <span className='text-[11px] text-muted'>{count ? `${Array.isArray(file) ? file.length : 1} file(s)` : file.name?.slice(0, 16)}</span>}
-        <label className='px-3 py-2 rounded-lg border border-dashed border-line hover:border-accent/60 bg-surface-2 cursor-pointer text-xs text-muted inline-flex items-center gap-1'>
-          <ImagePlus size={13} />Upload
-          <input type='file' accept={label.includes('Video') ? 'video/*' : 'image/*'} multiple={!!count} hidden onChange={(e) => onPick(count ? [...e.target.files] : e.target.files?.[0] || null)} />
-        </label>
-      </div>
-      {hint && <p className='text-[10px] text-muted mt-1'>{hint}</p>}
-    </div>
-  )
-
   return (
     <Modal open onClose={onClose} icon={LayoutGrid} title={isEdit ? `Edit · ${initial.name}` : 'Add Section'} subtitle='Products / categories · images · layout · link' size='xl'
       footer={<><Btn variant='ghost' size='sm' onClick={onClose}>Cancel</Btn><Btn variant='primary' size='sm' loading={busy} onClick={submit}>{isEdit ? 'Save changes' : 'Create section'}</Btn></>}
@@ -221,10 +206,8 @@ const SectionForm = ({ token, initial, onClose, onDone }) => {
           <div><label className={lbl}>Status</label><select value={status} onChange={(e) => setStatus(e.target.value)} className={inp}><option value='active'>Active</option><option value='inactive'>Inactive</option></select></div>
         </div>
 
-        <div className='grid sm:grid-cols-2 gap-3'>
-          <Pick label='Desktop image' file={banners.length ? banners : null} existing={initial?.bannerImages?.[0]} count={banners.length || 1} onPick={setBanners} hint='Recommended 1920 × 800 px (landscape)' />
-          <Pick label='Mobile image' file={mobile} existing={initial?.bannerMobile} onPick={setMobile} hint='Recommended 800 × 1000 px (portrait)' />
-        </div>
+        {/* Images & videos are managed from the Category and Product pages — a
+            section only arranges existing content, so no uploads are needed here. */}
 
         {/* Content type + layout + card placement */}
         <div className='rounded-xl border border-line p-3 bg-surface-2/40'>

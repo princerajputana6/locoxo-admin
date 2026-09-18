@@ -23,7 +23,10 @@ const SHIP_STATUS = {
   cancelled: { label: 'Cancelled', cls: 'bg-danger/10 text-danger' },
 }
 
-const TABS = ['All', 'Pending', 'Confirmed', 'Packed', 'Pickuped', 'Delivered', 'Cancelled', 'Returned', 'Exchange']
+const TABS = ['All', 'Pending', 'Confirmed', 'Packed', 'Pickuped', 'Delivered', 'Cancelled', 'Returned', 'Exchange', 'Completed']
+// Display label per tab (status value stays the same underneath).
+const TAB_LABEL = { Pickuped: 'Pickedup', Returned: 'Return' }
+const tabLabel = (t) => TAB_LABEL[t] || t
 const PENDING_REASONS = ['Admin Pending Required', 'Address Verification', 'Payment Verification', 'Stock Check', 'Other']
 const money = (n) => `${currency}${Number(n || 0).toLocaleString('en-IN')}`
 const dt = (d) => new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -132,7 +135,7 @@ const OrderManagementNew = ({ token }) => {
       <div className='flex flex-wrap gap-2 mb-4'>
         {TABS.map((t) => (
           <button key={t} onClick={() => setTab(t)} className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${tab === t ? 'bg-accent text-white border-accent' : 'bg-white border-line text-muted hover:text-fg'}`}>
-            {t === 'Pickuped' ? 'Pickedup' : t} <span className={`px-1.5 rounded ${tab === t ? 'bg-white/20' : 'bg-surface-2 text-fg'}`}>{counts[t] ?? 0}</span>
+            {tabLabel(t)} <span className={`px-1.5 rounded ${tab === t ? 'bg-white/20' : 'bg-surface-2 text-fg'}`}>{counts[t] ?? 0}</span>
           </button>
         ))}
       </div>
@@ -466,7 +469,7 @@ const ShippingSetupModal = ({ token, settings, onClose, onSaved }) => {
 
         {/* Connection status */}
         <div className={`rounded-xl border px-4 py-3 mb-4 text-sm flex items-center gap-2 ${settings?.configured ? 'bg-success/5 border-success/30 text-success' : 'bg-danger/5 border-danger/30 text-danger'}`}>
-          {settings?.configured ? <><CheckCircle2 size={15} /> Connected to Velocity ({settings.provider})</> : <><XCircle size={15} /> Not connected — set VELOCITY_USERNAME &amp; VELOCITY_PASSWORD in the backend .env</>}
+          {settings?.configured ? <><CheckCircle2 size={15} /> Credentials configured ({settings.provider}) — API access is verified when you create a warehouse or ship</> : <><XCircle size={15} /> Not configured — set VELOCITY_USERNAME &amp; VELOCITY_PASSWORD in the backend env</>}
         </div>
 
         {/* Warehouse */}

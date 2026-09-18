@@ -275,6 +275,7 @@ const AddSubModal = ({ token, info, onClose, onSaved }) => {
               <span className='text-sm text-muted'>{image ? image.name : editing?.image ? 'Change image' : 'Upload image'}</span>
               <input type='file' accept='image/*' hidden onChange={(e) => setImage(e.target.files?.[0] || null)} />
             </label>
+            <p className='text-[11px] text-muted mt-1.5'>Recommended <span className='font-semibold text-fg'>800 × 800 px</span> (square 1:1) · JPG or PNG · up to 5&nbsp;MB</p>
           </div>
         </div>
 
