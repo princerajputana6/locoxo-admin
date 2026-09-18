@@ -6,8 +6,22 @@ import { toast } from 'react-toastify'
 import {
   Search, Calendar, Filter, Eye, X, Check, StickyNote, Printer, User, Phone, MapPin,
   Truck, Copy, ShieldCheck, ScanLine, RotateCcw, Repeat, CheckCircle2, XCircle, Clock,
+  Loader2, RefreshCw, FileText, Warehouse, MapPinned, PackageCheck,
 } from 'lucide-react'
 import { useAdminOrderStream } from '../../hooks/useOrderRealtime'
+
+// Live carrier status → label + colour for the delivery panel.
+const SHIP_STATUS = {
+  created: { label: 'Courier allocated', cls: 'bg-accent/10 text-accent' },
+  label_generated: { label: 'Label generated', cls: 'bg-accent/10 text-accent' },
+  picked_up: { label: 'Picked up', cls: 'bg-violet/10 text-violet' },
+  in_transit: { label: 'In transit', cls: 'bg-violet/10 text-violet' },
+  out_for_delivery: { label: 'Out for delivery', cls: 'bg-amber/10 text-amber' },
+  delivered: { label: 'Delivered', cls: 'bg-success/10 text-success' },
+  failed: { label: 'Delivery failed', cls: 'bg-danger/10 text-danger' },
+  returned: { label: 'Returned', cls: 'bg-danger/10 text-danger' },
+  cancelled: { label: 'Cancelled', cls: 'bg-danger/10 text-danger' },
+}
 
 const TABS = ['All', 'Pending', 'Confirmed', 'Packed', 'Pickuped', 'Delivered', 'Cancelled', 'Returned', 'Exchange']
 const PENDING_REASONS = ['Admin Pending Required', 'Address Verification', 'Payment Verification', 'Stock Check', 'Other']
@@ -23,6 +37,17 @@ const OrderManagementNew = ({ token }) => {
   const [search, setSearch] = useState('')
   const [payment, setPayment] = useState('All')
   const [from, setFrom] = useState(''); const [to, setTo] = useState('')
+  const [shipSettings, setShipSettings] = useState(null)
+  const [showShipSetup, setShowShipSetup] = useState(false)
+  const [shipping, setShipping] = useState({})   // { [orderId]: true } in-flight ship calls
+
+  const fetchShipSettings = async () => {
+    try {
+      const { data } = await axios.get(backendUrl + '/api/shipment/admin/settings', { headers: { token } })
+      if (data.success) setShipSettings(data)
+    } catch { /* non-fatal */ }
+  }
+  useEffect(() => { if (token) fetchShipSettings() }, [token])
 
   const fetchOrders = async () => {
     if (!token) return
@@ -57,14 +82,52 @@ const OrderManagementNew = ({ token }) => {
     catch (err) { toast.error(err.response?.data?.message || 'Failed') }
   }
   const changeStatus = (orderId, status) => act('/api/order/status', { orderId, status }, `Marked ${status}`)
+
+  // Ship an order: allocate a courier via Velocity, get AWB + label, move to Pickuped.
+  const ship = async (o) => {
+    if (!shipSettings?.effectiveWarehouse) { setShowShipSetup(true); return toast.error('Set up a pickup warehouse first') }
+    const w = o.delivery?.weight
+    if (!w) { toast.error('Enter product weight before shipping'); return }
+    setShipping((s) => ({ ...s, [o._id]: true }))
+    try {
+      const { data } = await axios.post(backendUrl + '/api/shipment/admin/create',
+        { orderId: o._id, weight: o.delivery?.weight, dimensions: o.delivery?.dimensions },
+        { headers: { token } })
+      if (data.success) { toast.success(data.message || 'Shipped'); fetchOrders() }
+      else toast.error(data.message || 'Shipping failed')
+    } catch (err) { toast.error(err.response?.data?.message || 'Shipping failed') }
+    finally { setShipping((s) => ({ ...s, [o._id]: false })) }
+  }
   const printInvoice = async (o) => {
     try { const res = await axios.get(`${backendUrl}/api/order/invoice/${o._id}`, { headers: { token }, responseType: 'blob' }); const url = URL.createObjectURL(new Blob([res.data])); const a = document.createElement('a'); a.href = url; a.download = `invoice-${o.orderNumber}.pdf`; a.click(); URL.revokeObjectURL(url) } catch { toast.error('Invoice failed') }
   }
 
   const sel = 'px-3 py-2.5 text-sm rounded-xl bg-white border border-line text-fg focus:border-accent outline-none'
 
+  const needsWarehouse = shipSettings && !shipSettings.effectiveWarehouse
+
   return (
     <div className='p-6'>
+      {/* Header: title + shipping setup */}
+      <div className='flex items-center justify-between mb-4 gap-3 flex-wrap'>
+        <h1 className='text-xl font-heading font-extrabold text-fg flex items-center gap-2'><Truck size={20} className='text-accent' /> Order Management</h1>
+        <button onClick={() => setShowShipSetup(true)} className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'>
+          <Warehouse size={15} /> Shipping
+          {shipSettings && (shipSettings.effectiveWarehouse
+            ? <span className='w-2 h-2 rounded-full bg-success' title='Warehouse ready' />
+            : <span className='w-2 h-2 rounded-full bg-danger' title='No warehouse' />)}
+        </button>
+      </div>
+
+      {needsWarehouse && (
+        <div className='rounded-xl bg-amber/5 border border-amber/30 px-4 py-3 mb-4 text-sm text-amber flex items-center justify-between gap-3 flex-wrap'>
+          <span className='flex items-center gap-2'><Warehouse size={15} /> No pickup warehouse configured — orders can’t be shipped to a delivery partner yet.</span>
+          <button onClick={() => setShowShipSetup(true)} className='px-3 py-1.5 rounded-lg bg-amber text-white text-xs font-semibold'>Set up now</button>
+        </div>
+      )}
+
+      {showShipSetup && <ShippingSetupModal token={token} settings={shipSettings} onClose={() => setShowShipSetup(false)} onSaved={fetchShipSettings} />}
+
       {/* Status tabs */}
       <div className='flex flex-wrap gap-2 mb-4'>
         {TABS.map((t) => (
@@ -90,7 +153,7 @@ const OrderManagementNew = ({ token }) => {
       {loading ? <div className='space-y-3'>{[0, 1, 2].map((i) => <div key={i} className='skeleton h-48 rounded-2xl' />)}</div> :
         shown.length === 0 ? <div className='glass rounded-2xl py-16 text-center text-muted'>No orders in “{tab}”.</div> :
           <div className='space-y-3'>
-            {shown.map((o) => <OrderCard key={o._id} o={o} act={act} changeStatus={changeStatus} printInvoice={printInvoice} token={token} refresh={fetchOrders} />)}
+            {shown.map((o) => <OrderCard key={o._id} o={o} act={act} changeStatus={changeStatus} printInvoice={printInvoice} token={token} refresh={fetchOrders} ship={ship} shipping={!!shipping[o._id]} />)}
           </div>}
     </div>
   )
@@ -131,7 +194,7 @@ const CustomerBlock = ({ o }) => (
   </div>
 )
 
-const OrderCard = ({ o, act, changeStatus, printInvoice, token, refresh }) => {
+const OrderCard = ({ o, act, changeStatus, printInvoice, token, refresh, ship, shipping }) => {
   const [note, setNote] = useState('')
   const addNote = () => { if (note.trim()) act('/api/order/note', { orderId: o._id, note }, 'Note added').then(() => setNote('')) }
 
@@ -148,7 +211,7 @@ const OrderCard = ({ o, act, changeStatus, printInvoice, token, refresh }) => {
             {!['Cancelled', 'Delivered', 'Completed', 'Returned'].includes(o.status) && <button onClick={() => changeStatus(o._id, 'Cancelled')} className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg border border-danger/40 text-danger hover:bg-danger/5'><X size={15} /> Cancel Order</button>}
             {o.status === 'Pending' && <button onClick={() => changeStatus(o._id, 'Confirmed')} className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg border border-success/40 text-success hover:bg-success/5'><Check size={15} /> Confirm Order</button>}
             {o.status === 'Confirmed' && <button onClick={() => changeStatus(o._id, 'Packed')} className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg border border-success/40 text-success hover:bg-success/5'><Check size={15} /> Confirm Order</button>}
-            {o.status === 'Packed' && <button onClick={() => act('/api/order/delivery', { orderId: o._id, markPickuped: true }, 'Pickup confirmed')} className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg border border-success/40 text-success hover:bg-success/5'><Check size={15} /> Confirm Pickup</button>}
+            {o.status === 'Packed' && <button disabled={shipping} onClick={() => ship(o)} className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-accent text-white hover:opacity-90 disabled:opacity-60'>{shipping ? <Loader2 size={15} className='animate-spin' /> : <Truck size={15} />} {shipping ? 'Allocating courier…' : 'Ship Order'}</button>}
             {['Confirmed', 'Packed', 'Pickuped', 'Delivered', 'Completed', 'Cancelled'].includes(o.status) && <button onClick={() => printInvoice(o)} className='w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><Printer size={15} /> Print Invoice</button>}
             <div className='pt-1'>
               <p className='text-xs font-semibold text-fg flex items-center gap-1.5 mb-1.5'><StickyNote size={13} /> Order Notes</p>
@@ -166,8 +229,8 @@ const StatusPanel = ({ o, act, changeStatus, token }) => {
   if (o.status === 'Pending') return <PendingPanel o={o} act={act} />
   if (o.status === 'Confirmed') return <ConfirmedPanel o={o} act={act} token={token} />
   if (o.status === 'Packed') return <PickupPanel o={o} act={act} />
-  if (o.status === 'Pickuped') return <DeliveryInfoPanel o={o} label='Out for delivery' />
-  if (o.status === 'Delivered') return <DeliveredPanel o={o} />
+  if (o.status === 'Pickuped') return <DeliveryInfoPanel o={o} token={token} />
+  if (o.status === 'Delivered') return <DeliveredPanel o={o} token={token} />
   if (o.status === 'Completed') return <CompletedPanel o={o} />
   if (o.status === 'Cancelled') return <CancelledPanel o={o} />
   if (o.status === 'Returned') return <ReturnExchangePanel o={o} act={act} type='Return' />
@@ -231,29 +294,81 @@ const PickupPanel = ({ o, act }) => {
   )
 }
 
-const DeliveryInfoPanel = ({ o, label }) => {
+// Loads the live shipment for an order + a manual "refresh tracking" action.
+const useShipment = (orderId, token) => {
+  const [shipment, setShipment] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const load = useCallback(async () => {
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/shipment/admin/order/${orderId}`, { headers: { token } })
+      if (data.success) setShipment(data.shipment)
+    } catch { /* ignore */ } finally { setLoading(false) }
+  }, [orderId, token])
+  useEffect(() => { load() }, [load])
+  const refresh = async () => {
+    setRefreshing(true)
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/shipment/admin/refresh`, { orderId }, { headers: { token } })
+      if (data.success) { setShipment(data.shipment); if (data.changed) toast.success('Tracking updated') }
+      else toast.error(data.message || 'Refresh failed')
+    } catch (err) { toast.error(err.response?.data?.message || 'Refresh failed') }
+    finally { setRefreshing(false) }
+  }
+  return { shipment, loading, refreshing, refresh, reload: load }
+}
+
+const DeliveryInfoPanel = ({ o, token }) => {
+  const { shipment, loading, refreshing, refresh } = useShipment(o._id, token)
   const d = o.delivery || {}
+  const st = SHIP_STATUS[shipment?.status] || { label: 'Awaiting pickup', cls: 'bg-accent/10 text-accent' }
+  const awb = shipment?.awb || d.shipmentId || o.trackingNumber
   return (
     <div>
-      <p className='text-sm font-semibold text-fg mb-2'>Delivery Details</p>
-      <div className='text-xs text-muted space-y-1'>
-        <p>Courier: <span className='text-fg'>{d.courierName || '—'}</span></p>
-        <p>Partner: <span className='text-fg'>{d.partnerName || '—'}</span></p>
-        <p>AWB: <span className='text-fg font-mono'>{d.shipmentId || o.trackingNumber || '—'}</span></p>
-        <p>Status: <span className='px-2 py-0.5 rounded bg-accent/10 text-accent font-semibold'>{label}</span></p>
+      <div className='flex items-center justify-between mb-2'>
+        <p className='text-sm font-semibold text-fg'>Delivery Details</p>
+        <button onClick={refresh} disabled={refreshing || !awb} className='inline-flex items-center gap-1 text-[11px] font-semibold text-accent disabled:opacity-40'>
+          {refreshing ? <Loader2 size={12} className='animate-spin' /> : <RefreshCw size={12} />} Refresh
+        </button>
       </div>
+      {loading ? <div className='skeleton h-20 rounded-lg' /> : (
+        <>
+          <div className='text-xs text-muted space-y-1'>
+            <p>Courier: <span className='text-fg font-semibold'>{shipment?.courierName || d.courierName || '—'}</span></p>
+            <p>AWB: <span className='text-fg font-mono'>{awb || '—'}</span></p>
+            <p>Status: <span className={`px-2 py-0.5 rounded font-semibold ${st.cls}`}>{st.label}</span></p>
+            {shipment?.currentLocation && <p>Location: <span className='text-fg'>{shipment.currentLocation}</span></p>}
+          </div>
+          <div className='flex gap-2 mt-2'>
+            {shipment?.labelUrl && <a href={shipment.labelUrl} target='_blank' rel='noreferrer' className='inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-white border border-line text-fg'><FileText size={12} /> Label</a>}
+            {shipment?.carrierTrackUrl && <a href={shipment.carrierTrackUrl} target='_blank' rel='noreferrer' className='inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-white border border-line text-fg'><MapPinned size={12} /> Track</a>}
+          </div>
+          {shipment?.events?.length > 0 && (
+            <div className='mt-3 border-t border-line pt-2 max-h-40 overflow-auto'>
+              {[...shipment.events].reverse().slice(0, 6).map((e, i) => (
+                <div key={i} className='flex gap-2 text-[11px] mb-1.5'>
+                  <span className='w-1.5 h-1.5 rounded-full bg-accent mt-1 shrink-0' />
+                  <div><span className='text-fg font-semibold capitalize'>{e.description || e.status?.replace(/_/g, ' ')}</span><span className='text-muted'> · {e.location || ''} {new Date(e.timestamp).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
 
-const DeliveredPanel = ({ o }) => {
-  const delivered = o.statusHistory?.find((h) => h.status === 'Delivered')?.at || o.updatedAt
+const DeliveredPanel = ({ o, token }) => {
+  const { shipment } = useShipment(o._id, token)
+  const delivered = shipment?.deliveredAt || o.statusHistory?.find((h) => h.status === 'Delivered')?.at || o.updatedAt
   const daysLeft = Math.max(0, 7 - Math.floor((Date.now() - new Date(delivered)) / 864e5))
   return (
     <div>
       <p className='text-sm font-semibold text-fg mb-2'>Delivery Information</p>
       <p className='text-xs text-muted'>Delivered On <span className='text-fg font-semibold'>{dt(delivered)}</span></p>
-      <p className='text-xs text-muted mt-1'>Delivered By <span className='text-fg font-semibold'>{o.delivery?.partnerName || 'Delivery partner'}</span></p>
+      <p className='text-xs text-muted mt-1'>Delivered By <span className='text-fg font-semibold'>{shipment?.courierName || o.delivery?.partnerName || 'Delivery partner'}</span></p>
+      {(shipment?.awb || o.trackingNumber) && <p className='text-xs text-muted mt-1'>AWB <span className='text-fg font-mono'>{shipment?.awb || o.trackingNumber}</span></p>}
       <div className='rounded-xl border border-line p-3 mt-2'>
         <p className='text-sm font-semibold text-fg'>Return / Exchange Available</p>
         <p className='text-xs text-muted mt-1'>Time Left <span className='px-2 py-0.5 rounded bg-success/10 text-success font-semibold'>{daysLeft} Days</span></p>
@@ -306,5 +421,125 @@ const ReturnExchangePanel = ({ o, act, type }) => (
   </div>
 )
 const changeApprove = (o, act, type) => act('/api/order/status', { orderId: o._id, status: type === 'Return' ? 'Returned' : 'Exchange' }, `${type} approved`)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shipping setup: pickup warehouse (create from company address) + serviceability.
+// ─────────────────────────────────────────────────────────────────────────────
+const ShippingSetupModal = ({ token, settings, onClose, onSaved }) => {
+  const c = settings?.company || {}
+  const wh = settings?.effectiveWarehouse
+  const [creating, setCreating] = useState(false)
+  const [form, setForm] = useState({
+    name: `${c.name || 'LOCOXO'} Warehouse`,
+    contactPerson: c.name || '', phone: c.phone || '', email: c.email || '',
+    street: [c.address?.line1, c.address?.line2].filter(Boolean).join(', '),
+    city: c.address?.city || '', state: c.address?.state || '', zip: c.address?.pincode || '',
+    pickupLocation: 'Primary',
+  })
+  useEffect(() => {
+    setForm((f) => ({
+      ...f,
+      contactPerson: f.contactPerson || c.name || '',
+      phone: f.phone || c.phone || '', email: f.email || c.email || '',
+      street: f.street || [c.address?.line1, c.address?.line2].filter(Boolean).join(', '),
+      city: f.city || c.address?.city || '', state: f.state || c.address?.state || '', zip: f.zip || c.address?.pincode || '',
+    }))
+  }, [settings]) // eslint-disable-line
+
+  const createWh = async () => {
+    setCreating(true)
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/shipment/admin/warehouse`, form, { headers: { token } })
+      if (data.success) { toast.success(data.message || 'Warehouse created'); onSaved?.() } else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed') }
+    finally { setCreating(false) }
+  }
+
+  const f = 'w-full px-3 py-2 text-sm rounded-lg bg-white border border-line'
+  return (
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4' onClick={onClose}>
+      <div className='bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-auto p-6' onClick={(e) => e.stopPropagation()}>
+        <div className='flex items-center justify-between mb-4'>
+          <h2 className='text-lg font-heading font-extrabold text-fg flex items-center gap-2'><Truck size={18} className='text-accent' /> Shipping — Velocity</h2>
+          <button onClick={onClose} className='p-1.5 rounded-lg hover:bg-surface-2'><X size={18} /></button>
+        </div>
+
+        {/* Connection status */}
+        <div className={`rounded-xl border px-4 py-3 mb-4 text-sm flex items-center gap-2 ${settings?.configured ? 'bg-success/5 border-success/30 text-success' : 'bg-danger/5 border-danger/30 text-danger'}`}>
+          {settings?.configured ? <><CheckCircle2 size={15} /> Connected to Velocity ({settings.provider})</> : <><XCircle size={15} /> Not connected — set VELOCITY_USERNAME &amp; VELOCITY_PASSWORD in the backend .env</>}
+        </div>
+
+        {/* Warehouse */}
+        <div className='rounded-xl border border-line p-4 mb-4'>
+          <p className='text-sm font-semibold text-fg mb-2 flex items-center gap-2'><Warehouse size={15} /> Pickup Warehouse</p>
+          {wh ? (
+            <div className='text-sm text-fg'>
+              <p className='flex items-center gap-2 text-success font-semibold mb-1'><CheckCircle2 size={14} /> Ready</p>
+              <p className='text-xs text-muted'>Warehouse ID: <span className='font-mono text-fg'>{wh.warehouseId}</span> · Pickup: <span className='text-fg'>{wh.pickupLocation}</span></p>
+              <p className='text-[11px] text-muted mt-1'>To change it, create a new one below.</p>
+            </div>
+          ) : (
+            <p className='text-xs text-muted mb-3'>Create your pickup warehouse in Velocity from your company address. Orders are picked up from here.</p>
+          )}
+          <div className='grid grid-cols-2 gap-2 mt-3'>
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder='Warehouse name' className={f + ' col-span-2'} />
+            <input value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} placeholder='Contact person' className={f} />
+            <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder='Phone' className={f} />
+            <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder='Email' className={f + ' col-span-2'} />
+            <input value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} placeholder='Street address' className={f + ' col-span-2'} />
+            <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder='City' className={f} />
+            <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder='State' className={f} />
+            <input value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} placeholder='PIN code' className={f} />
+            <input value={form.pickupLocation} onChange={(e) => setForm({ ...form, pickupLocation: e.target.value })} placeholder='Pickup label' className={f} />
+          </div>
+          <button onClick={createWh} disabled={creating || !settings?.configured} className='mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-accent text-white disabled:opacity-50'>
+            {creating ? <Loader2 size={15} className='animate-spin' /> : <PackageCheck size={15} />} {wh ? 'Create new warehouse' : 'Create warehouse'}
+          </button>
+        </div>
+
+        {/* Serviceability */}
+        <ServiceabilityChecker token={token} />
+      </div>
+    </div>
+  )
+}
+
+const ServiceabilityChecker = ({ token }) => {
+  const [q, setQ] = useState({ from: '', to: '', paymentMode: 'prepaid', shipmentType: 'forward' })
+  const [res, setRes] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const check = async () => {
+    if (!q.from || !q.to) return toast.error('Enter both pincodes')
+    setLoading(true); setRes(null)
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/shipment/admin/serviceability`, q, { headers: { token } })
+      if (data.success) setRes(data); else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed') }
+    finally { setLoading(false) }
+  }
+  const f = 'px-3 py-2 text-sm rounded-lg bg-white border border-line'
+  return (
+    <div className='rounded-xl border border-line p-4'>
+      <p className='text-sm font-semibold text-fg mb-2 flex items-center gap-2'><MapPinned size={15} /> Check Serviceability</p>
+      <div className='grid grid-cols-2 sm:grid-cols-4 gap-2'>
+        <input value={q.from} onChange={(e) => setQ({ ...q, from: e.target.value })} placeholder='From PIN' className={f} />
+        <input value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} placeholder='To PIN' className={f} />
+        <select value={q.paymentMode} onChange={(e) => setQ({ ...q, paymentMode: e.target.value })} className={f}><option value='prepaid'>Prepaid</option><option value='cod'>COD</option></select>
+        <select value={q.shipmentType} onChange={(e) => setQ({ ...q, shipmentType: e.target.value })} className={f}><option value='forward'>Forward</option><option value='return'>Return</option></select>
+      </div>
+      <button onClick={check} disabled={loading} className='mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg disabled:opacity-50'>{loading ? <Loader2 size={15} className='animate-spin' /> : <Search size={15} />} Check</button>
+      {res && (
+        <div className='mt-3 text-sm'>
+          {res.serviceable ? (
+            <>
+              <p className='text-success font-semibold'>Serviceable{res.zone ? ` · ${res.zone}` : ''} · {res.carriers?.length || 0} carriers</p>
+              <div className='flex flex-wrap gap-1.5 mt-2'>{(res.carriers || []).map((cr) => <span key={cr.carrier_id} className='text-[11px] px-2 py-0.5 rounded border border-line text-fg'>{cr.carrier_name}</span>)}</div>
+            </>
+          ) : <p className='text-danger font-semibold'>Not serviceable for this lane</p>}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default OrderManagementNew
