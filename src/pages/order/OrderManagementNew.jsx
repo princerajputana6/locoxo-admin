@@ -102,8 +102,6 @@ const OrderManagementNew = ({ token }) => {
   // Ship an order: allocate a courier via Velocity, get AWB + label, move to Pickuped.
   const ship = async (o) => {
     if (!shipSettings?.effectiveWarehouse) { setShowShipSetup(true); return toast.error('Set up a pickup warehouse first') }
-    const w = o.delivery?.weight
-    if (!w) { toast.error('Enter product weight before shipping'); return }
     setShipping((s) => ({ ...s, [o._id]: true }))
     try {
       const { data } = await axios.post(backendUrl + '/api/shipment/admin/create',
@@ -175,14 +173,10 @@ const OrderManagementNew = ({ token }) => {
         </div>
       </div>
 
-      {/* All tab → table (Order History); status tabs → rich cards */}
-      {loading ? <div className='space-y-3'>{[0, 1, 2].map((i) => <div key={i} className='skeleton h-48 rounded-2xl' />)}</div> :
+      {/* Order History table (all tabs) */}
+      {loading ? <div className='space-y-3'>{[0, 1, 2].map((i) => <div key={i} className='skeleton h-16 rounded-2xl' />)}</div> :
         shown.length === 0 ? <div className='bg-surface rounded-2xl border border-line py-16 text-center text-muted'>No orders in “{tab}”.</div> :
-          tab === 'All'
-            ? <OrderTable rows={paged} navigate={navigate} printInvoice={printInvoice} />
-            : <div className='space-y-3'>
-                {paged.map((o) => <OrderCard key={o._id} o={o} act={act} changeStatus={changeStatus} printInvoice={printInvoice} token={token} refresh={fetchOrders} ship={ship} shipping={!!shipping[o._id]} />)}
-              </div>}
+          <OrderTable rows={paged} navigate={navigate} printInvoice={printInvoice} changeStatus={changeStatus} ship={ship} shipping={shipping} />}
 
       {/* Pagination */}
       {!loading && shown.length > 0 && (
@@ -214,8 +208,14 @@ const STATUS_PILL = {
   Cancelled: 'bg-danger/10 text-danger', Returned: 'bg-danger/10 text-danger', Exchange: 'bg-violet/10 text-violet',
 }
 
-const OrderTable = ({ rows, navigate, printInvoice }) => {
+const OrderTable = ({ rows, navigate, printInvoice, changeStatus, ship, shipping }) => {
   const [menu, setMenu] = useState(null)
+  const primaryAction = (o) => {
+    if (o.status === 'Pending') return { label: 'Confirm Order', run: () => changeStatus(o._id, 'Confirmed') }
+    if (o.status === 'Confirmed') return { label: 'Mark Packed', run: () => changeStatus(o._id, 'Packed') }
+    if (o.status === 'Packed') return { label: 'Ship Order', run: () => ship(o) }
+    return null
+  }
   return (
     <div className='bg-surface rounded-2xl border border-line shadow-card overflow-visible'>
       <p className='text-sm font-bold text-fg px-5 pt-5 pb-3'>Order History</p>
@@ -251,12 +251,14 @@ const OrderTable = ({ rows, navigate, printInvoice }) => {
                     <div className='flex items-center justify-end gap-1 relative'>
                       <button onClick={() => navigate(`/orders/${o._id}`)} className='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-fg hover:bg-surface-2'><Eye size={14} /> View</button>
                       <button onClick={() => setMenu(menu === o._id ? null : o._id)} className='p-1.5 rounded-lg hover:bg-surface-2'><MoreVertical size={15} /></button>
-                      {menu === o._id && (
-                        <div className='absolute right-0 top-9 z-10 w-40 bg-white border border-line rounded-xl shadow-card py-1' onMouseLeave={() => setMenu(null)}>
+                      {menu === o._id && (() => { const pa = primaryAction(o); const canCancel = !['Cancelled', 'Delivered', 'Completed', 'Returned'].includes(o.status); return (
+                        <div className='absolute right-0 top-9 z-20 w-44 bg-white border border-line rounded-xl shadow-card py-1' onMouseLeave={() => setMenu(null)}>
                           <button onClick={() => { setMenu(null); navigate(`/orders/${o._id}`) }} className='w-full text-left px-3 py-2 text-sm hover:bg-surface-2 flex items-center gap-2'><Eye size={14} /> View Details</button>
+                          {pa && <button disabled={shipping?.[o._id]} onClick={() => { setMenu(null); pa.run() }} className='w-full text-left px-3 py-2 text-sm hover:bg-surface-2 flex items-center gap-2 text-success disabled:opacity-50'><Check size={14} /> {pa.label}</button>}
                           <button onClick={() => { setMenu(null); printInvoice(o) }} className='w-full text-left px-3 py-2 text-sm hover:bg-surface-2 flex items-center gap-2'><Printer size={14} /> Print Invoice</button>
+                          {canCancel && <button onClick={() => { setMenu(null); changeStatus(o._id, 'Cancelled') }} className='w-full text-left px-3 py-2 text-sm hover:bg-surface-2 flex items-center gap-2 text-danger'><X size={14} /> Cancel Order</button>}
                         </div>
-                      )}
+                      ) })()}
                     </div>
                   </td>
                 </tr>
