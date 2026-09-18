@@ -7,8 +7,10 @@ import {
   Search, Calendar, Filter, Eye, X, Check, StickyNote, Printer, User, Phone, MapPin,
   Truck, Copy, ShieldCheck, ScanLine, RotateCcw, Repeat, CheckCircle2, XCircle, Clock,
   Loader2, RefreshCw, FileText, Warehouse, MapPinned, PackageCheck,
+  BarChart3, Plus, MoreVertical, ChevronLeft, ChevronRight, CreditCard, IndianRupee, Package,
 } from 'lucide-react'
 import { useAdminOrderStream } from '../../hooks/useOrderRealtime'
+import ManualOrderModal from '../../components/ui/ManualOrderModal'
 
 // Live carrier status → label + colour for the delivery panel.
 const SHIP_STATUS = {
@@ -33,6 +35,7 @@ const dt = (d) => new Date(d).toLocaleString('en-IN', { day: '2-digit', month: '
 
 const OrderManagementNew = ({ token }) => {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState(searchParams.get('tab') || 'All')
@@ -42,7 +45,11 @@ const OrderManagementNew = ({ token }) => {
   const [from, setFrom] = useState(''); const [to, setTo] = useState('')
   const [shipSettings, setShipSettings] = useState(null)
   const [showShipSetup, setShowShipSetup] = useState(false)
+  const [showManual, setShowManual] = useState(false)
   const [shipping, setShipping] = useState({})   // { [orderId]: true } in-flight ship calls
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(10)
+  useEffect(() => { setPage(1) }, [tab, search, payment, from, to])
 
   const fetchShipSettings = async () => {
     try {
@@ -80,6 +87,12 @@ const OrderManagementNew = ({ token }) => {
     })
   }, [orders, tab, payment, search])
 
+  const totalPages = Math.max(1, Math.ceil(shown.length / perPage))
+  const paged = useMemo(() => shown.slice((page - 1) * perPage, page * perPage), [shown, page, perPage])
+  const reportExcel = async () => {
+    try { const res = await axios.get(`${backendUrl}/api/order/export`, { headers: { token }, responseType: 'blob' }); const url = URL.createObjectURL(new Blob([res.data])); const a = document.createElement('a'); a.href = url; a.download = 'orders-report.xlsx'; a.click(); URL.revokeObjectURL(url) } catch { toast.error('Report failed') }
+  }
+
   const act = async (url, body, ok) => {
     try { const { data } = await axios.post(backendUrl + url, body, { headers: { token } }); if (data.success) { toast.success(ok || data.message); fetchOrders() } else toast.error(data.message) }
     catch (err) { toast.error(err.response?.data?.message || 'Failed') }
@@ -111,16 +124,26 @@ const OrderManagementNew = ({ token }) => {
 
   return (
     <div className='p-6'>
-      {/* Header: title + shipping setup */}
-      <div className='flex items-center justify-between mb-4 gap-3 flex-wrap'>
-        <h1 className='text-xl font-heading font-extrabold text-fg flex items-center gap-2'><Truck size={20} className='text-accent' /> Order Management</h1>
-        <button onClick={() => setShowShipSetup(true)} className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'>
-          <Warehouse size={15} /> Shipping
-          {shipSettings && (shipSettings.effectiveWarehouse
-            ? <span className='w-2 h-2 rounded-full bg-success' title='Warehouse ready' />
-            : <span className='w-2 h-2 rounded-full bg-danger' title='No warehouse' />)}
-        </button>
+      {/* Header: title + breadcrumb + actions */}
+      <div className='flex items-start justify-between mb-5 gap-3 flex-wrap'>
+        <div>
+          <h1 className='text-2xl font-heading font-extrabold text-fg'>Order Management</h1>
+          <p className='text-xs text-muted mt-0.5'>Dashboard <span className='mx-1'>›</span> Order Management</p>
+        </div>
+        <div className='flex items-center gap-2 flex-wrap'>
+          <button onClick={reportExcel} className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'><BarChart3 size={15} /> Report</button>
+          <button onClick={fetchOrders} className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'><RefreshCw size={15} /> Refresh</button>
+          <button onClick={() => setShowShipSetup(true)} className='inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl bg-white border border-line text-fg hover:bg-surface-2'>
+            <Warehouse size={15} /> Shipping
+            {shipSettings && (shipSettings.effectiveWarehouse
+              ? <span className='w-2 h-2 rounded-full bg-success' title='Warehouse ready' />
+              : <span className='w-2 h-2 rounded-full bg-danger' title='No warehouse' />)}
+          </button>
+          <button onClick={() => setShowManual(true)} className='inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-accent text-white hover:opacity-90'><Plus size={15} /> Manual Order</button>
+        </div>
       </div>
+
+      {showManual && <ManualOrderModal open={showManual} onClose={() => setShowManual(false)} token={token} onDone={() => { setShowManual(false); fetchOrders() }} />}
 
       {needsWarehouse && (
         <div className='rounded-xl bg-amber/5 border border-amber/30 px-4 py-3 mb-4 text-sm text-amber flex items-center justify-between gap-3 flex-wrap'>
@@ -152,12 +175,96 @@ const OrderManagementNew = ({ token }) => {
         </div>
       </div>
 
-      {/* Order cards */}
+      {/* All tab → table (Order History); status tabs → rich cards */}
       {loading ? <div className='space-y-3'>{[0, 1, 2].map((i) => <div key={i} className='skeleton h-48 rounded-2xl' />)}</div> :
-        shown.length === 0 ? <div className='glass rounded-2xl py-16 text-center text-muted'>No orders in “{tab}”.</div> :
-          <div className='space-y-3'>
-            {shown.map((o) => <OrderCard key={o._id} o={o} act={act} changeStatus={changeStatus} printInvoice={printInvoice} token={token} refresh={fetchOrders} ship={ship} shipping={!!shipping[o._id]} />)}
-          </div>}
+        shown.length === 0 ? <div className='bg-surface rounded-2xl border border-line py-16 text-center text-muted'>No orders in “{tab}”.</div> :
+          tab === 'All'
+            ? <OrderTable rows={paged} navigate={navigate} printInvoice={printInvoice} />
+            : <div className='space-y-3'>
+                {paged.map((o) => <OrderCard key={o._id} o={o} act={act} changeStatus={changeStatus} printInvoice={printInvoice} token={token} refresh={fetchOrders} ship={ship} shipping={!!shipping[o._id]} />)}
+              </div>}
+
+      {/* Pagination */}
+      {!loading && shown.length > 0 && (
+        <div className='flex items-center justify-between gap-3 flex-wrap mt-4 text-sm'>
+          <p className='text-muted'>Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, shown.length)} of {shown.length} orders</p>
+          <div className='flex items-center gap-2'>
+            <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className='p-2 rounded-lg bg-white border border-line disabled:opacity-40'><ChevronLeft size={16} /></button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1).map((p, i, arr) => (
+              <React.Fragment key={p}>
+                {i > 0 && p - arr[i - 1] > 1 && <span className='text-muted px-1'>…</span>}
+                <button onClick={() => setPage(p)} className={`min-w-[36px] px-2 py-1.5 rounded-lg text-sm font-semibold border ${p === page ? 'bg-accent text-white border-accent' : 'bg-white border-line text-fg hover:bg-surface-2'}`}>{p}</button>
+              </React.Fragment>
+            ))}
+            <button disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className='p-2 rounded-lg bg-white border border-line disabled:opacity-40'><ChevronRight size={16} /></button>
+            <select value={perPage} onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1) }} className='px-2 py-1.5 rounded-lg bg-white border border-line text-sm'>
+              {[10, 20, 50].map((n) => <option key={n} value={n}>{n} / page</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Order History table (All tab) ────────────────────────────────────────────
+const STATUS_PILL = {
+  Pending: 'bg-amber/10 text-amber', Confirmed: 'bg-accent/10 text-accent', Packed: 'bg-violet/10 text-violet',
+  Pickuped: 'bg-accent/10 text-accent', Delivered: 'bg-success/10 text-success', Completed: 'bg-success/10 text-success',
+  Cancelled: 'bg-danger/10 text-danger', Returned: 'bg-danger/10 text-danger', Exchange: 'bg-violet/10 text-violet',
+}
+
+const OrderTable = ({ rows, navigate, printInvoice }) => {
+  const [menu, setMenu] = useState(null)
+  return (
+    <div className='bg-surface rounded-2xl border border-line shadow-card overflow-visible'>
+      <p className='text-sm font-bold text-fg px-5 pt-5 pb-3'>Order History</p>
+      <div className='overflow-x-auto'>
+        <table className='w-full text-sm'>
+          <thead>
+            <tr className='text-[11px] uppercase tracking-wider text-muted border-y border-line bg-surface-2/50'>
+              <th className='text-left font-semibold px-5 py-3'>Order ID</th>
+              <th className='text-left font-semibold px-3 py-3'>Customer</th>
+              <th className='text-left font-semibold px-3 py-3'>Phone</th>
+              <th className='text-left font-semibold px-3 py-3'>Payment</th>
+              <th className='text-left font-semibold px-3 py-3'>Shipping</th>
+              <th className='text-right font-semibold px-3 py-3'>Amount</th>
+              <th className='text-left font-semibold px-3 py-3'>Status</th>
+              <th className='text-left font-semibold px-3 py-3'>Order Date</th>
+              <th className='text-right font-semibold px-5 py-3'>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((o) => {
+              const cod = (o.paymentMethod || '').toUpperCase() === 'COD'
+              return (
+                <tr key={o._id} className='border-b border-line last:border-0 hover:bg-surface-2/40'>
+                  <td className='px-5 py-3'><button onClick={() => navigate(`/orders/${o._id}`)} className='font-mono font-bold text-accent hover:underline'>#{o.orderNumber}</button></td>
+                  <td className='px-3 py-3'><div className='flex items-center gap-2'><span className='w-7 h-7 rounded-full bg-surface-2 grid place-items-center'><User size={13} className='text-muted' /></span><span className='font-medium text-fg'>{o.address?.name || o.userId?.name || '—'}</span></div></td>
+                  <td className='px-3 py-3 text-muted'>{o.address?.phone || o.userId?.phone || '—'}</td>
+                  <td className='px-3 py-3'><span className='inline-flex items-center gap-1.5 text-fg'>{cod ? <IndianRupee size={13} className='text-amber' /> : <CreditCard size={13} className='text-success' />}{cod ? 'COD' : 'Prepaid'}</span></td>
+                  <td className='px-3 py-3'><span className='inline-flex items-center gap-1.5 text-fg'><Truck size={13} className='text-muted' /> Delivery</span></td>
+                  <td className='px-3 py-3 text-right font-semibold text-fg'>{money(o.amount)}</td>
+                  <td className='px-3 py-3'><span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${STATUS_PILL[o.status] || 'bg-surface-2 text-fg'}`}>{tabLabel(o.status)}</span></td>
+                  <td className='px-3 py-3 text-muted whitespace-nowrap'>{dt(o.date)}</td>
+                  <td className='px-5 py-3'>
+                    <div className='flex items-center justify-end gap-1 relative'>
+                      <button onClick={() => navigate(`/orders/${o._id}`)} className='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-fg hover:bg-surface-2'><Eye size={14} /> View</button>
+                      <button onClick={() => setMenu(menu === o._id ? null : o._id)} className='p-1.5 rounded-lg hover:bg-surface-2'><MoreVertical size={15} /></button>
+                      {menu === o._id && (
+                        <div className='absolute right-0 top-9 z-10 w-40 bg-white border border-line rounded-xl shadow-card py-1' onMouseLeave={() => setMenu(null)}>
+                          <button onClick={() => { setMenu(null); navigate(`/orders/${o._id}`) }} className='w-full text-left px-3 py-2 text-sm hover:bg-surface-2 flex items-center gap-2'><Eye size={14} /> View Details</button>
+                          <button onClick={() => { setMenu(null); printInvoice(o) }} className='w-full text-left px-3 py-2 text-sm hover:bg-surface-2 flex items-center gap-2'><Printer size={14} /> Print Invoice</button>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
