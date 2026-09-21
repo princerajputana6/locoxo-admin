@@ -11,7 +11,7 @@ const Navbar = ({ setToken, userRole, userData }) => {
       <div className='flex items-center gap-3'>
         {!isAdmin && (
           <>
-            <img src={assets.logo} alt='Locoxo' className='h-7 w-auto' />
+            <img src={assets.logo} alt='Locoxo' className='h-[35px] w-auto' />
             <span className='hidden sm:inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border bg-info/15 text-info border-info/30'>
               <User size={11} /> Influencer Portal
             </span>

@@ -74,7 +74,7 @@ const Login = ({setToken, setUserRole, setUserData}) => {
         <div className='glass border border-white/10 rounded-xl shadow-lg p-10 max-w-md w-full'>
             <div className='flex flex-col items-center mb-8'>
                 <div className='bg-surface-3 rounded-xl px-6 py-3 mb-4'>
-                    <img src={assets.logo_white} alt='Locoxo Logo' className='h-7 w-auto' />
+                    <img src={assets.logo_white} alt='Locoxo Logo' className='h-[35px] w-auto' />
                 </div>
             </div>
             <form onSubmit={onSubmitHandler}>

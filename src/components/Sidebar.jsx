@@ -104,7 +104,7 @@ const Sidebar = () => {
       <div className='flex items-center gap-2 px-4 h-16 border-b border-white/10 shrink-0'>
         {!collapsed && (
           <div className='flex items-center gap-2 min-w-0'>
-            <img src={assets.logo_white} alt='Locoxo' className='h-6 w-auto shrink-0' />
+            <img src={assets.logo_white} alt='Locoxo' className='h-[30px] w-auto shrink-0' />
             <span className='inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/15 text-white border border-white/20 whitespace-nowrap'>
               <Shield size={10} /> Admin Panel
             </span>
