@@ -5,8 +5,14 @@ import { backendUrl, currency } from '../../App'
 import { toast } from 'react-toastify'
 import {
   ArrowLeft, User, Package, CreditCard, Truck, Clock, MapPin, Phone, Mail,
-  Edit3, XCircle, CheckCircle2, Printer, Loader2,
+  Edit3, XCircle, CheckCircle2, Printer, Loader2, RefreshCw, FileText, MapPinned, PackageCheck,
 } from 'lucide-react'
+
+const SHIP_LABEL = {
+  created: 'Order created · awaiting courier', label_generated: 'Label generated', picked_up: 'Picked up',
+  in_transit: 'In transit', out_for_delivery: 'Out for delivery', delivered: 'Delivered',
+  failed: 'Delivery failed', returned: 'Returned', cancelled: 'Cancelled',
+}
 
 const money = (n) => `${currency}${Number(n || 0).toLocaleString('en-IN')}`
 const dt = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'
@@ -24,6 +30,26 @@ const OrderDetails = ({ token }) => {
   const [shipment, setShipment] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [assigning, setAssigning] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const assignCourier = async () => {
+    setAssigning(true)
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/shipment/admin/assign`, { orderId }, { headers: { token } })
+      if (data.success) { toast.success(data.message || 'Courier allocated'); setShipment(data.shipment); load() }
+      else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed') }
+    finally { setAssigning(false) }
+  }
+  const refreshTracking = async () => {
+    setRefreshing(true)
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/shipment/admin/refresh`, { orderId }, { headers: { token } })
+      if (data.success) { setShipment(data.shipment); if (data.changed) toast.success('Tracking updated') } else toast.error(data.message)
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed') }
+    finally { setRefreshing(false) }
+  }
 
   const load = async () => {
     try {
@@ -143,10 +169,33 @@ const OrderDetails = ({ token }) => {
               <Row label='Pincode' value={addr.pincode || '—'} />
               <Row label='State' value={addr.state || '—'} />
               <Row label='Country' value={addr.country || 'India'} />
-              {shipment?.courierName && <Row label='Courier' value={shipment.courierName} />}
-              {shipment?.awb && <Row label='AWB' value={shipment.awb} />}
             </div>
           </Card>
+
+          {shipment && (
+            <Card>
+              <div className='flex items-center justify-between mb-3'>
+                <p className='text-sm font-bold text-fg flex items-center gap-2'><PackageCheck size={16} className='text-accent' /> Shipment</p>
+                {shipment.awb && <button onClick={refreshTracking} disabled={refreshing} className='inline-flex items-center gap-1 text-[11px] font-semibold text-accent disabled:opacity-40'>{refreshing ? <Loader2 size={12} className='animate-spin' /> : <RefreshCw size={12} />} Refresh</button>}
+              </div>
+              <Row label='Status' value={SHIP_LABEL[shipment.status] || shipment.status} />
+              <Row label='Courier' value={shipment.courierName || '—'} />
+              <Row label='AWB' value={shipment.awb || '—'} />
+              {shipment.currentLocation && <Row label='Location' value={shipment.currentLocation} />}
+              {shipment.providerOrderId && <Row label='Velocity Order' value={shipment.providerOrderId} />}
+
+              <div className='flex flex-wrap gap-2 mt-3'>
+                {!shipment.awb && shipment.status !== 'cancelled' && (
+                  <button onClick={assignCourier} disabled={assigning} className='inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-accent text-white hover:opacity-90 disabled:opacity-50'>
+                    {assigning ? <Loader2 size={15} className='animate-spin' /> : <Truck size={15} />} Assign Courier
+                  </button>
+                )}
+                {shipment.labelUrl && <a href={shipment.labelUrl} target='_blank' rel='noreferrer' className='inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><FileText size={14} /> Label</a>}
+                {shipment.carrierTrackUrl && <a href={shipment.carrierTrackUrl} target='_blank' rel='noreferrer' className='inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg bg-white border border-line text-fg hover:bg-surface-2'><MapPinned size={14} /> Track</a>}
+              </div>
+              {!shipment.awb && <p className='text-[11px] text-muted mt-2'>Order created at Velocity as a new order. Click <span className='font-semibold text-fg'>Assign Courier</span> to allocate a delivery partner — the AWB, label and live tracking will then appear here.</p>}
+            </Card>
+          )}
         </div>
 
         {/* Payment + Timeline */}
