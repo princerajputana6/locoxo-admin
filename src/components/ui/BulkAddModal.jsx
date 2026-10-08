@@ -8,7 +8,7 @@ import { backendUrl } from '../../App'
 const AUDIENCES = ['Male', 'Female', 'Unisex', 'Child']
 const SIZES = ['Free', 'XS', 'S', 'M', 'L', 'XL', 'XXL']
 const blankRow = { name: '', mrp: '', audience: 'Male', size: 'M', color: 'Black', stock: '0', lowStock: '5', image: null, preview: '' }
-const MAX_IMAGE_MB = 5 // keep in sync with backend middleware/multer.js
+const MAX_IMAGE_MB = 10 // keep in sync with backend middleware/multer.js
 
 // Mirror the backend's human-readable barcode format for a live preview.
 const clean = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]+/g, '')

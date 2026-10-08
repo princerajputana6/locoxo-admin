@@ -1,8 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense, lazy } from 'react'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { canAccess } from './config/permissions'
+
+// Lightweight route-transition loader for lazy pages.
+const PageLoader = () => (
+  <div className='flex-1 grid place-items-center min-h-[60vh]'>
+    <div className='w-10 h-10 border-4 border-line border-t-accent rounded-full animate-spin' />
+  </div>
+)
 
 // Blocks a limited staff from opening (by URL) a section they weren't granted.
 const pathPerm = (p) => {
@@ -23,39 +30,40 @@ const PermGuard = ({ children }) => {
   if (!canAccess(pathPerm(pathname))) return <Navigate to='/' replace />
   return children
 }
-import Add from './pages/Add'
-import List from './pages/List'
-import ProductManagement from './pages/product/ProductManagement'
-import ProductDetailList from './pages/product/ProductDetailList'
-import AddProductNew from './pages/product/AddProductNew'
-import Orders from './pages/Orders'
-import OrderManagementNew from './pages/order/OrderManagementNew'
-import OrderDetails from './pages/order/OrderDetails'
-import Dashboard from './pages/Dashboard'
-import Categories from './pages/Categories'
-import AddCategory from './pages/AddCategory'
-import Customers from './pages/Customers'
-import Inventory from './pages/Inventory'
-import InventoryOverview from './pages/inventory/InventoryOverview'
-import StockDetails from './pages/inventory/StockDetails'
-import BulkAddInventory from './pages/inventory/BulkAddInventory'
-import CreateBarcode from './pages/inventory/CreateBarcode'
-import CreateProductCode from './pages/inventory/CreateProductCode'
-import Coupons from './pages/Coupons'
-import Banners from './pages/Banners'
-import Returns from './pages/Returns'
-import SalesReport from './pages/SalesReport'
-import Analytics from './pages/Analytics'
-import Influencers from './pages/Influencers'
-import InfluencerDashboard from './pages/InfluencerDashboard'
-import Tickets from './pages/Tickets'
-import Reviews from './pages/Reviews'
-import AdminManagement from './pages/AdminManagement'
-import MembershipPlans from './pages/MembershipPlans'
-import Marketing from './pages/Marketing'
-import Merchandising from './pages/Merchandising'
-import AIInsights from './pages/AIInsights'
-import Calculator from './pages/Calculator'
+// Pages are lazy-loaded so the admin first-load bundle stays small (faster boot).
+const Add = lazy(() => import('./pages/Add'))
+const List = lazy(() => import('./pages/List'))
+const ProductManagement = lazy(() => import('./pages/product/ProductManagement'))
+const ProductDetailList = lazy(() => import('./pages/product/ProductDetailList'))
+const AddProductNew = lazy(() => import('./pages/product/AddProductNew'))
+const Orders = lazy(() => import('./pages/Orders'))
+const OrderManagementNew = lazy(() => import('./pages/order/OrderManagementNew'))
+const OrderDetails = lazy(() => import('./pages/order/OrderDetails'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Categories = lazy(() => import('./pages/Categories'))
+const AddCategory = lazy(() => import('./pages/AddCategory'))
+const Customers = lazy(() => import('./pages/Customers'))
+const Inventory = lazy(() => import('./pages/Inventory'))
+const InventoryOverview = lazy(() => import('./pages/inventory/InventoryOverview'))
+const StockDetails = lazy(() => import('./pages/inventory/StockDetails'))
+const BulkAddInventory = lazy(() => import('./pages/inventory/BulkAddInventory'))
+const CreateBarcode = lazy(() => import('./pages/inventory/CreateBarcode'))
+const CreateProductCode = lazy(() => import('./pages/inventory/CreateProductCode'))
+const Coupons = lazy(() => import('./pages/Coupons'))
+const Banners = lazy(() => import('./pages/Banners'))
+const Returns = lazy(() => import('./pages/Returns'))
+const SalesReport = lazy(() => import('./pages/SalesReport'))
+const Analytics = lazy(() => import('./pages/Analytics'))
+const Influencers = lazy(() => import('./pages/Influencers'))
+const InfluencerDashboard = lazy(() => import('./pages/InfluencerDashboard'))
+const Tickets = lazy(() => import('./pages/Tickets'))
+const Reviews = lazy(() => import('./pages/Reviews'))
+const AdminManagement = lazy(() => import('./pages/AdminManagement'))
+const MembershipPlans = lazy(() => import('./pages/MembershipPlans'))
+const Marketing = lazy(() => import('./pages/Marketing'))
+const Merchandising = lazy(() => import('./pages/Merchandising'))
+const AIInsights = lazy(() => import('./pages/AIInsights'))
+const Calculator = lazy(() => import('./pages/Calculator'))
 import Login from './components/Login'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -108,6 +116,7 @@ const App = () => {
               <Navbar setToken={handleLogout} userRole={userRole} userData={userData} />
               {(userRole === 'admin' || userRole === 'staff') ? (
                 <PermGuard>
+                <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path='/' element={<Dashboard token={token} />} />
                   <Route path='/add' element={<Add token={token} />} />
@@ -144,12 +153,15 @@ const App = () => {
                   <Route path='/reports/analytics' element={<Analytics token={token} />} />
                   <Route path='*' element={<Navigate to='/' />} />
                 </Routes>
+                </Suspense>
                 </PermGuard>
               ) : (
+                <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path='/' element={<InfluencerDashboard token={token} userData={userData} />} />
                   <Route path='*' element={<Navigate to='/' />} />
                 </Routes>
+                </Suspense>
               )}
             </div>
           </div>

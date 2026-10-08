@@ -83,7 +83,14 @@ const AddProductNew = ({ token }) => {
     return { ...c, mrp: v, discount }
   })
   const toggleSize = (s) => setCur((c) => ({ ...c, sizes: c.sizes.includes(s) ? c.sizes.filter((x) => x !== s) : [...c.sizes, s] }))
-  const onImages = (e) => { const files = [...e.target.files].filter((f) => f.type.startsWith('image/')); setCur((c) => ({ ...c, images: [...c.images, ...files].slice(0, 10) })); e.target.value = '' }
+  const onImages = (e) => {
+    const picked = [...e.target.files]
+    const over = picked.find((f) => f.type.startsWith('image/') && f.size > 10 * 1024 * 1024)
+    if (over) toast.error(`${over.name}: over 10MB — please upload a smaller image`)
+    const files = picked.filter((f) => f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024)
+    setCur((c) => ({ ...c, images: [...c.images, ...files].slice(0, 10) }))
+    e.target.value = ''
+  }
   const onVideos = (e) => { const files = [...e.target.files].filter((f) => f.type.startsWith('video/')); setCur((c) => ({ ...c, videos: [...c.videos, ...files].slice(0, 3) })); e.target.value = '' }
 
   const blankCur = () => ({ color: '', colorCode: '#000000', sizes: [], mrp: '', sellingPrice: '', discount: '', description: '', images: [], imageUrls: [], videos: [], videoUrls: [] })
@@ -224,7 +231,7 @@ const AddProductNew = ({ token }) => {
         <div className='grid md:grid-cols-2 gap-4'>
           <div>
             <label className={lbl}>Product Images</label>
-            <label className='flex flex-col items-center justify-center gap-1 h-24 rounded-xl border-2 border-dashed border-line bg-surface-2 cursor-pointer hover:border-accent/50'><UploadCloud size={20} className='text-faint' /><span className='text-sm text-muted'>Click to upload or drag and drop</span><span className='text-[10px] text-faint'>JPG, PNG, WEBP (Max. 5MB each)</span><input type='file' accept='image/*' multiple hidden onChange={onImages} /></label>
+            <label className='flex flex-col items-center justify-center gap-1 h-24 rounded-xl border-2 border-dashed border-line bg-surface-2 cursor-pointer hover:border-accent/50'><UploadCloud size={20} className='text-faint' /><span className='text-sm text-muted'>Click to upload or drag and drop</span><span className='text-[10px] text-faint'>JPG, PNG, WEBP (Max. 10MB each)</span><input type='file' accept='image/*' multiple hidden onChange={onImages} /></label>
             {((cur.imageUrls || []).length > 0 || cur.images.length > 0) && <div className='flex flex-wrap gap-2 mt-2'>
               {(cur.imageUrls || []).map((u, i) => <div key={'u' + i} className='relative w-14 h-14 rounded-lg overflow-hidden border border-line'><img src={u} alt='' className='w-full h-full object-cover' /><button onClick={() => setC('imageUrls', cur.imageUrls.filter((_, idx) => idx !== i))} className='absolute top-0.5 right-0.5 w-4 h-4 grid place-items-center rounded-full bg-black/60 text-white'><X size={10} /></button></div>)}
               {cur.images.map((f, i) => <div key={i} className='relative w-14 h-14 rounded-lg overflow-hidden border border-line'><img src={URL.createObjectURL(f)} alt='' className='w-full h-full object-cover' /><button onClick={() => setC('images', cur.images.filter((_, idx) => idx !== i))} className='absolute top-0.5 right-0.5 w-4 h-4 grid place-items-center rounded-full bg-black/60 text-white'><X size={10} /></button></div>)}

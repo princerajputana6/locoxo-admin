@@ -16,7 +16,7 @@ const STATUSES = [
 ]
 const HIGHLIGHT_PRESETS = ['Fabric', 'Neck', 'Sleeve', 'Pattern', 'Fit', 'Occasion', 'Wash Care']
 const MAX_IMAGES = 7
-const MAX_IMAGE_MB = 5
+const MAX_IMAGE_MB = 10
 const MAX_VIDEO_MB = 60
 
 const inp = 'w-full px-3 py-2 text-sm rounded-lg bg-surface-2 border border-line text-fg placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent/15 outline-none transition-all'
